@@ -14,7 +14,6 @@ services:
     volumes:
       - ./images:/app/images
       - ./videos:/app/videos
-      - ./uploads:/app/uploads
       - ./users.json:/app/users.json
     depends_on:
       - api

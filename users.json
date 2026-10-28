@@ -10,5 +10,9 @@
   "mbe": {
     "email": "mbesob55@gmail.com",
     "password": "scrypt:32768:8:1$muhfLsxw2JqmjYRs$47d70cfd4f76f567abfce4b27e9663dd9acec3069a80220d8caa5ed63573e81e929ac6ab5ab8ad74fe37dcef823f2c0ddbd61d5eb3387d4a2e6c19e366f3810f"
+  },
+  "Ben": {
+    "email": "Ben@gmail.com",
+    "password": "scrypt:32768:8:1$00DQxbykvmtnuHy6$e2eb551cdf81970ed4419e9f462b5f9c9fc56da8a625520089b85431ddbedc708ddd83c2e80e9ed7a7af6d598710468798c070b6a19639b9012befe6cdc93d33"
   }
 }

@@ -114,7 +114,7 @@ docker compose up --build
 | `api`   | 5001 | API externe de traitement                      |
 
 
-Volumes montés : `images/`, `videos/`, `uploads/`, `api_uploads/`.
+Volumes montés : `images/`, `videos/`, `api_uploads/`.
 
 ## Utilisation rapide
 
@@ -175,12 +175,10 @@ projet ydays/
 ├── app.py                    # Application Flask principale
 ├── external_api.py           # API externe (process-video, process-query)
 ├── kling_api.py              # Client API Kling AI
-├── api_video.py              # API vidéo simple (optionnel)
 ├── requirements.txt
 ├── docker-compose.yml
 ├── Dockerfile.web / Dockerfile.api
-├── build_media_editor.py     # Script de build éditeur (si utilisé)
-├── videos/  images/  uploads/  api_uploads/
+├── videos/  images/  api_uploads/
 ├── static/
 │   ├── css/   (style.css, prompt-manager.css)
 │   └── js/    (script.js, zoom.js, media-editor.js,
@@ -189,8 +187,7 @@ projet ydays/
 │   ├── base.html, header.html, footer.html
 │   ├── home.html             # Landing page
 │   ├── video.html, image.html
-│   ├── information.html, contact.html, search.html
-│   └── prompt-manager.html
+│   └── information.html, contact.html, search.html
 ├── README_ASSISTANT_IA.md
 ├── GUIDE_PROMPT_ENGINEERING.md
 └── run_tests.py

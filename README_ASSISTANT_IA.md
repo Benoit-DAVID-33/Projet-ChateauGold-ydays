@@ -47,7 +47,6 @@ Code pour envoyer directement les données à Runway (ou autre API) avec le prom
 | `static/css/prompt-manager.css` | 🎨 Styling du panel |
 | `templates/image.html` | 🔧 Ajout du bouton & interface |
 | `GUIDE_PROMPT_ENGINEERING.md` | 📚 Guide complet d'utilisation |
-| `EXAMPLES_USAGE.js` | 💡 Exemples de code |
 
 ---
 

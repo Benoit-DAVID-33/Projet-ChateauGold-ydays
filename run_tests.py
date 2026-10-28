@@ -11,7 +11,6 @@ def test_imports():
     try:
         from app import app
         import external_api
-        import api_video
         return True
     except Exception as e:
         print("ERREUR imports:", e)
@@ -60,7 +59,7 @@ def main():
 
     print("1. Imports...")
     if test_imports():
-        print("   OK (app, external_api, api_video)\n")
+        print("   OK (app, external_api)\n")
     else:
         print("   ÉCHEC\n")
         return 1
