@@ -12,11 +12,19 @@ from functools import wraps
 
 load_dotenv()
 
-app = Flask(__name__)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(os.path.dirname(BASE_DIR), "frontend")
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(BASE_DIR, "data"))
+
+app = Flask(
+    __name__,
+    template_folder=os.path.join(FRONTEND_DIR, "templates"),
+    static_folder=os.path.join(FRONTEND_DIR, "static"),
+)
 app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY', 'dev-secret-key-change-in-production')
 
 # Fichier JSON pour stocker les utilisateurs
-USERS_FILE = 'users.json'
+USERS_FILE = os.path.join(DATA_DIR, 'users.json')
 
 def load_users():
     if os.path.exists(USERS_FILE):
@@ -53,8 +61,8 @@ app.config['MAIL_DEFAULT_SENDER'] = os.environ.get('MAIL_USERNAME', 'noreply@pro
 
 mail = Mail(app)
 
-VIDEO_FOLDER = "videos"
-IMAGE_FOLDER = "images"
+VIDEO_FOLDER = os.path.join(DATA_DIR, "videos")
+IMAGE_FOLDER = os.path.join(DATA_DIR, "images")
 os.makedirs(VIDEO_FOLDER, exist_ok=True)
 os.makedirs(IMAGE_FOLDER, exist_ok=True)
 

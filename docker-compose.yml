@@ -12,9 +12,7 @@ services:
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
     volumes:
-      - ./images:/app/images
-      - ./videos:/app/videos
-      - ./users.json:/app/users.json
+      - ./backend/data:/app/backend/data
     depends_on:
       - api
 
@@ -26,4 +24,4 @@ services:
     ports:
       - "5001:5001"
     volumes:
-      - ./api_uploads:/app/api_uploads
+      - ./backend/data/api_uploads:/app/backend/data/api_uploads

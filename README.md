@@ -47,7 +47,7 @@ env\Scripts\activate
 source env/bin/activate
 
 # 3. Dépendances
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 ### Configuration (`.env`)
@@ -86,7 +86,7 @@ PUBLIC_BASE_URL=https://xxxx.ngrok-free.app
 ### Application web
 
 ```bash
-python app.py
+python backend/app.py
 ```
 
 → [http://localhost:5000](http://localhost:5000)
@@ -96,7 +96,7 @@ python app.py
 Dans un second terminal :
 
 ```bash
-python external_api.py
+python backend/external_api.py
 ```
 
 → [http://localhost:5001](http://localhost:5001)
@@ -114,7 +114,7 @@ docker compose up --build
 | `api`   | 5001 | API externe de traitement                      |
 
 
-Volumes montés : `images/`, `videos/`, `api_uploads/`.
+Volume monté : `backend/data/` (`images/`, `videos/`, `api_uploads/`, `users.json`).
 
 ## Utilisation rapide
 
@@ -162,7 +162,7 @@ Routes proxy dans `app.py` (clés dans `.env`) :
 | `GET`   | `/kling/omni-video-status/<task_id>`     | Statut + téléchargement local si succès |
 
 
-Pour **Omni-Video** avec une vidéo du dossier `videos/`, configurez `PUBLIC_BASE_URL` (tunnel ngrok ou URL de déploiement) afin que Kling puisse récupérer le fichier.
+Pour **Omni-Video** avec une vidéo du dossier `backend/data/videos/`, configurez `PUBLIC_BASE_URL` (tunnel ngrok ou URL de déploiement) afin que Kling puisse récupérer le fichier.
 
 ### Reconnaissance vocale
 
@@ -172,25 +172,28 @@ Micro dans la barre de recherche (Chrome, Edge, Safari) : dictée → champ de r
 
 ```
 projet ydays/
-├── app.py                    # Application Flask principale
-├── external_api.py           # API externe (process-video, process-query)
-├── kling_api.py              # Client API Kling AI
-├── requirements.txt
+├── backend/                  # Serveur Flask (Python)
+│   ├── app.py                # Application Flask principale
+│   ├── external_api.py       # API externe (process-video, process-query)
+│   ├── kling_api.py          # Client API Kling AI
+│   ├── requirements.txt
+│   ├── run_tests.py
+│   └── data/                 # Données : images/, videos/, api_uploads/, users.json
+├── frontend/                 # Interface (servie par Flask)
+│   ├── static/
+│   │   ├── css/   (style.css, prompt-manager.css)
+│   │   └── js/    (script.js, zoom.js, media-editor.js,
+│   │               prompt-generator.js, api-integration.js)
+│   └── templates/
+│       ├── base.html, header.html, footer.html
+│       ├── home.html         # Landing page
+│       ├── video.html, image.html
+│       └── information.html, contact.html, search.html
+├── docs/
 ├── docker-compose.yml
 ├── Dockerfile.web / Dockerfile.api
-├── videos/  images/  api_uploads/
-├── static/
-│   ├── css/   (style.css, prompt-manager.css)
-│   └── js/    (script.js, zoom.js, media-editor.js,
-│               prompt-generator.js, api-integration.js)
-├── templates/
-│   ├── base.html, header.html, footer.html
-│   ├── home.html             # Landing page
-│   ├── video.html, image.html
-│   └── information.html, contact.html, search.html
 ├── README_ASSISTANT_IA.md
-├── GUIDE_PROMPT_ENGINEERING.md
-└── run_tests.py
+└── GUIDE_PROMPT_ENGINEERING.md
 ```
 
 ## Routes principales (`app.py`)
@@ -230,7 +233,7 @@ Voir la section **Kling AI** pour les routes `/kling/`*.
 
 ## Dépendances
 
-Principales (voir `requirements.txt`) :
+Principales (voir `backend/requirements.txt`) :
 
 - Flask 3.1.2, Werkzeug, Jinja2
 - Flask-Mail, requests, python-dotenv
@@ -247,10 +250,10 @@ Principales (voir `requirements.txt`) :
 ## Démarrage rapide
 
 ```bash
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 # Copier et remplir .env (MAIL, KLING si besoin)
-python external_api.py    # terminal 1
-python app.py             # terminal 2
+python backend/external_api.py    # terminal 1
+python backend/app.py             # terminal 2
 # Ouvrir http://localhost:5000
 ```
 

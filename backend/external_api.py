@@ -4,7 +4,8 @@ from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 
-UPLOAD_FOLDER = "api_uploads"
+DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
+UPLOAD_FOLDER = os.path.join(DATA_DIR, "api_uploads")
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 @app.route("/process-video", methods=["POST"])

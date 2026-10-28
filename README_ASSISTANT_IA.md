@@ -42,10 +42,10 @@ Code pour envoyer directement les données à Runway (ou autre API) avec le prom
 
 | Fichier | Rôle |
 |---------|------|
-| `static/js/prompt-generator.js` | 🧠 Logique de génération de prompts |
-| `static/js/api-integration.js` | 🔌 Envoi à l'API |
-| `static/css/prompt-manager.css` | 🎨 Styling du panel |
-| `templates/image.html` | 🔧 Ajout du bouton & interface |
+| `frontend/static/js/prompt-generator.js` | 🧠 Logique de génération de prompts |
+| `frontend/static/js/api-integration.js` | 🔌 Envoi à l'API |
+| `frontend/static/css/prompt-manager.css` | 🎨 Styling du panel |
+| `frontend/templates/image.html` | 🔧 Ajout du bouton & interface |
 | `GUIDE_PROMPT_ENGINEERING.md` | 📚 Guide complet d'utilisation |
 
 ---

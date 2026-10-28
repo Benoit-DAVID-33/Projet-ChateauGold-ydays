@@ -181,7 +181,7 @@ Génère des instructions détaillées pour appliquer les effets visuels...
 
 ## 🔧 Pour intégrer avec ta clé API Runway
 
-### Dans `app.py` ou ton endpoint Flask:
+### Dans `backend/app.py` ou ton endpoint Flask:
 
 ```python
 @app.route('/process-query', methods=['POST'])
@@ -291,22 +291,22 @@ Système génère:
 
 ## 📚 Fichiers Ajoutés
 
-1. **`static/js/prompt-generator.js`** (340 lignes)
+1. **`frontend/static/js/prompt-generator.js`** (340 lignes)
    - Génération de prompts structurés
    - Calcul des positions relatives
    - Export JSON
 
-2. **`static/js/api-integration.js`** (280 lignes)
+2. **`frontend/static/js/api-integration.js`** (280 lignes)
    - Préparation des payloads
    - Envoi à l'API
    - Gestion des réponses
 
-3. **`static/css/prompt-manager.css`** (200 lignes)
+3. **`frontend/static/css/prompt-manager.css`** (200 lignes)
    - Styling du panel
    - Animations
    - Responsive
 
-4. **`templates/image.html`** (mis à jour)
+4. **`frontend/templates/image.html`** (mis à jour)
    - Ajout du bouton Assistant IA
    - Interface du gestionnaire de prompts
    - Scripts d'intégration
