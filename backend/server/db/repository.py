@@ -1,49 +1,13 @@
-"""Contrat de stockage des utilisateurs et implementation SQLAlchemy.
+"""Implementation SQLAlchemy du stockage des utilisateurs.
 
-Le reste de l'application ne depend que de l'interface ``UserStore``. Les deux
-membres qui gerent la base peuvent donc remplacer l'implementation par la leur
-(ou modifier ``models.py``) sans toucher au reste du code.
+Ce module importe SQLAlchemy : il est donc charge **a la demande** (premier
+acces a la base), jamais au demarrage de l'application.
 """
-
-from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 from sqlalchemy import select
 
+from .contract import UserRecord, UserStore
 from .models import User
-
-
-@dataclass(frozen=True)
-class UserRecord:
-    """Representation neutre d'un utilisateur (independante de l'ORM)."""
-
-    username: str
-    email: str
-    password_hash: str
-
-
-class UserStore(ABC):
-    """Interface de persistance des utilisateurs."""
-
-    @abstractmethod
-    def get(self, username: str) -> UserRecord | None:
-        """Retourne l'utilisateur, ou None s'il n'existe pas."""
-
-    @abstractmethod
-    def exists_username(self, username: str) -> bool:
-        """Indique si le nom d'utilisateur est deja pris."""
-
-    @abstractmethod
-    def exists_email(self, email: str) -> bool:
-        """Indique si l'email est deja utilise."""
-
-    @abstractmethod
-    def create(self, username: str, email: str, password_hash: str) -> None:
-        """Cree un utilisateur."""
-
-    @abstractmethod
-    def all(self) -> list[UserRecord]:
-        """Retourne tous les utilisateurs (utile pour l'import/seed)."""
 
 
 class SqlAlchemyUserStore(UserStore):

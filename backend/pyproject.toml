@@ -29,9 +29,10 @@ py-version = "3.11"
 jobs = 0
 
 [tool.pylint.basic]
-# Exception justifiee : "SessionLocal" est le nom conventionnel (doc officielle
-# SQLAlchemy) de la fabrique de sessions, que les membres de l'equipe attendent.
-good-names = ["SessionLocal"]
+# Exceptions justifiees : "SessionLocal" est le nom conventionnel SQLAlchemy ;
+# "_store" et "_initialized" sont des etats mutables de module (singletons
+# paresseux), pas des constantes, donc volontairement en minuscules.
+good-names = ["SessionLocal", "_store", "_initialized"]
 
 [tool.pylint.format]
 max-line-length = 100
@@ -41,7 +42,11 @@ max-args = 8
 max-positional-arguments = 8
 
 [tool.pylint."messages control"]
-disable = ["too-few-public-methods"]
+# too-few-public-methods : inutile pour des classes de donnees / conteneurs.
+# import-outside-toplevel : choix architectural assume - les bibliotheques
+#   lourdes (SQLAlchemy, httpx, werkzeug, PyJWT) sont importees a la demande
+#   pour ne pas penaliser le demarrage a froid (gain mesure ~540 ms).
+disable = ["too-few-public-methods", "import-outside-toplevel"]
 
 [tool.coverage.run]
 source = ["server", "main", "external_api"]

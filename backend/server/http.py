@@ -1,6 +1,16 @@
-"""Fabrique de clients HTTP asynchrones partages (pool de connexions keep-alive)."""
+"""Fabrique de clients HTTP asynchrones partages (pool de connexions keep-alive).
 
-import httpx
+``httpx`` est importe **a la demande** (dans ``get``), et non au niveau du
+module : cela evite de charger la bibliotheque (~130 ms) au demarrage alors
+qu'elle n'est utile qu'au premier appel reseau.
+"""
+
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    import httpx
 
 
 class LazyClient:
@@ -18,6 +28,8 @@ class LazyClient:
 
     def get(self) -> httpx.AsyncClient:
         """Retourne le client partage, en le creant si necessaire."""
+        import httpx
+
         if self._client is None:
             self._client = httpx.AsyncClient(
                 base_url=self._base_url,

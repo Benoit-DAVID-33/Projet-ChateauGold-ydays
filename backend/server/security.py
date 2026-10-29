@@ -3,19 +3,20 @@
 Le stockage concret est delegue a un ``UserStore`` (SQLAlchemy par defaut,
 JSON en repli). Les lectures sont mises en cache (TTL court) afin d'eviter une
 requete base ou une lecture fichier a chaque affichage de page.
+
+Le store est cree **au premier usage** (et non a l'import) : cela evite de
+charger SQLAlchemy au demarrage de l'application.
 """
 
 import logging
 
-from werkzeug.security import check_password_hash, generate_password_hash
-
 from . import config
 from .caching import TTLCache
-from .db import UserRecord, UserStore, build_user_store
+from .db.contract import UserRecord, UserStore
 
 logger = logging.getLogger("goldfx")
 
-_store: UserStore = build_user_store()
+_store: UserStore | None = None
 _cache = TTLCache(default_ttl=config.CACHE_TTL_SECONDS)
 
 
@@ -24,13 +25,25 @@ def clear_cache() -> None:
     _cache.clear()
 
 
+def _get_store() -> UserStore:
+    """Retourne le store utilisateurs, en le creant a la premiere utilisation."""
+    global _store  # pylint: disable=global-statement
+    if _store is None:
+        from .db import build_user_store
+
+        _store = build_user_store()
+    return _store
+
+
 def _get_record(username: str) -> UserRecord | None:
     """Retourne l'utilisateur depuis le cache, ou le charge depuis le store."""
-    return _cache.get_or_set(f"user:{username}", lambda: _store.get(username))
+    return _cache.get_or_set(f"user:{username}", lambda: _get_store().get(username))
 
 
 def authenticate(username: str, password: str) -> bool:
     """Verifie un couple identifiant / mot de passe."""
+    from werkzeug.security import check_password_hash  # import differe
+
     if not username or not password:
         return False
     record = _get_record(username)
@@ -41,11 +54,14 @@ def authenticate(username: str, password: str) -> bool:
 
 def create_user(username: str, email: str, password: str) -> tuple[bool, str]:
     """Cree un utilisateur. Retourne (succes, message)."""
-    if _store.exists_username(username):
+    from werkzeug.security import generate_password_hash  # import differe
+
+    store = _get_store()
+    if store.exists_username(username):
         return False, "Ce nom d'utilisateur existe déjà"
-    if _store.exists_email(email):
+    if store.exists_email(email):
         return False, "Cet email est déjà utilisé"
-    _store.create(username, email, generate_password_hash(password))
+    store.create(username, email, generate_password_hash(password))
     _cache.invalidate(f"user:{username}")
     return True, "Compte créé avec succès ! Vous pouvez maintenant vous connecter."
 

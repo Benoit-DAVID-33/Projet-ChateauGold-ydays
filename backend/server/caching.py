@@ -1,11 +1,13 @@
 """Cache et compression HTTP.
 
-Contient trois briques independantes et sans dependance externe :
+Contient quatre briques independantes et sans dependance externe :
 
 - ``TTLCache`` : cache memoire avec expiration, pour eviter de relire des
   donnees couteuses (ex. le store utilisateurs) a chaque requete.
 - ``StaticCacheMiddleware`` : ajoute ``Cache-Control`` sur les fichiers
   statiques (purement des en-tetes, sans mise en memoire du corps).
+- ``CompressibleStaticFiles`` : sert les fichiers texte dans le corps HTTP pour
+  qu'ils puissent etre compresses (voir plus bas).
 - ``SelectiveGZipMiddleware`` : compresse les reponses textuelles (HTML, JSON,
   CSS, JS, SVG) mais jamais les medias, afin de ne pas casser les requetes
   HTTP Range utilisees pour la lecture video.
@@ -15,9 +17,13 @@ import gzip
 import threading
 import time
 from collections.abc import Callable
+from pathlib import Path
 from typing import Any
 
+from starlette.concurrency import run_in_threadpool
 from starlette.datastructures import Headers, MutableHeaders
+from starlette.responses import Response
+from starlette.staticfiles import StaticFiles
 
 _MISSING = object()
 
@@ -110,11 +116,39 @@ class StaticCacheMiddleware:
         await self.app(scope, receive, send_wrapper)
 
 
+class CompressibleStaticFiles(StaticFiles):
+    """Sert les fichiers texte dans le corps HTTP (et non en envoi direct).
+
+    Certains serveurs (granian) envoient les fichiers via ``pathsend``, ce qui
+    court-circuite le corps HTTP : la compression gzip ne peut alors pas
+    s'appliquer. Pour les fichiers texte (CSS, JS, SVG...), on lit le contenu et
+    on le renvoie comme reponse normale, ce qui permet a
+    ``SelectiveGZipMiddleware`` de le compresser.
+    """
+
+    async def get_response(self, path: str, scope) -> Response:
+        response = await super().get_response(path, scope)
+        if scope.get("method") != "GET" or response.status_code != 200:
+            return response
+        media_type = response.headers.get("content-type", "")
+        if not media_type.startswith(_TEXTUAL_CONTENT_TYPES):
+            return response
+        full_path = getattr(response, "path", None)
+        if not full_path:
+            return response
+        try:
+            data = await run_in_threadpool(Path(full_path).read_bytes)
+        except OSError:
+            return response
+        return Response(data, status_code=200, media_type=media_type)
+
+
 class SelectiveGZipMiddleware:
     """Compresse les reponses textuelles, laisse passer les medias tels quels.
 
     Le filtrage par type de contenu evite de compresser les videos/images, ce
-    qui gaspillerait du CPU et invaliderait les requetes HTTP Range.
+    qui gaspillerait du CPU et invaliderait les requetes HTTP Range. Les messages
+    non standard (``pathsend``) sont transmis sans compression.
     """
 
     def __init__(self, app, minimum_size: int = 500) -> None:
@@ -126,16 +160,23 @@ class SelectiveGZipMiddleware:
             await self.app(scope, receive, send)
             return
 
-        state: dict[str, Any] = {"compress": False, "start": None, "body": bytearray()}
+        state: dict[str, Any] = {
+            "compress": False,
+            "start": None,
+            "body": bytearray(),
+            "started": False,
+        }
 
         async def send_wrapper(message):
-            if message["type"] == "http.response.start":
+            message_type = message["type"]
+            if message_type == "http.response.start":
                 state["start"] = message
                 content_type = Headers(raw=message["headers"]).get("content-type", "")
                 state["compress"] = content_type.startswith(_TEXTUAL_CONTENT_TYPES)
                 if not state["compress"]:
+                    state["started"] = True
                     await send(message)
-            elif message["type"] == "http.response.body":
+            elif message_type == "http.response.body":
                 if not state["compress"]:
                     await send(message)
                     return
@@ -143,22 +184,33 @@ class SelectiveGZipMiddleware:
                 if not message.get("more_body", False):
                     await self._flush(state, send)
             else:
+                await self._send_pending_plain(state, send)
                 await send(message)
 
         await self.app(scope, receive, send_wrapper)
 
+    async def _send_pending_plain(self, state: dict[str, Any], send) -> None:
+        """Envoie la reponse en attente sans compression (si pas deja envoyee)."""
+        if state["started"] or state["start"] is None:
+            return
+        await send(state["start"])
+        await send({"type": "http.response.body", "body": bytes(state["body"])})
+        state["started"] = True
+        state["compress"] = False
+        state["body"].clear()
+
     async def _flush(self, state: dict[str, Any], send) -> None:
-        start_message = state["start"]
+        """Envoie la reponse compressee si elle depasse la taille minimale."""
         body = bytes(state["body"])
         if len(body) < self.minimum_size:
-            await send(start_message)
-            await send({"type": "http.response.body", "body": body})
+            await self._send_pending_plain(state, send)
             return
 
         compressed = gzip.compress(body, compresslevel=6)
-        headers = MutableHeaders(scope=start_message)
+        headers = MutableHeaders(scope=state["start"])
         headers["Content-Encoding"] = "gzip"
         headers["Content-Length"] = str(len(compressed))
         headers.add_vary_header("Accept-Encoding")
-        await send(start_message)
+        await send(state["start"])
         await send({"type": "http.response.body", "body": compressed})
+        state["started"] = True

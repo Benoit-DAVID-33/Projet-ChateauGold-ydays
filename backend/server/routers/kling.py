@@ -7,7 +7,6 @@ defini dans ``server/__init__.py``, ce qui correspond a ce que lit le frontend.
 
 import logging
 
-import httpx
 from fastapi import APIRouter, Depends
 from fastapi.responses import JSONResponse
 from starlette.concurrency import run_in_threadpool
@@ -111,6 +110,8 @@ async def kling_omni_video(payload: OmniVideoRequest):
 @router.get("/omni-video-status/{task_id}")
 async def kling_omni_video_status(task_id: str):
     """Verifie le statut Omni-Video et telecharge la video locale si prete."""
+    import httpx  # import differe (voir server.http)
+
     result = await kling.get_omni_video_task(task_id)
 
     task_data = result.get("data", {}) if isinstance(result, dict) else {}

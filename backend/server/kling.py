@@ -10,15 +10,17 @@ clair. Les reponses 429 (limite de requetes) et 5xx sur les lectures sont
 reeessayees avec un delai croissant, en respectant l'en-tete ``Retry-After``.
 """
 
+from __future__ import annotations
+
 import asyncio
 import time
-from typing import Any
-
-import httpx
-import jwt
+from typing import TYPE_CHECKING, Any
 
 from . import config
 from .http import LazyClient
+
+if TYPE_CHECKING:
+    import httpx
 
 _lazy = LazyClient(
     base_url=config.KLING_API_BASE_URL, timeout=config.KLING_TIMEOUT_SECONDS, retries=3
@@ -51,6 +53,8 @@ async def aclose() -> None:
 
 def generate_jwt_token() -> str:
     """Genere un JWT d'authentification pour l'API Kling."""
+    import jwt  # import differe : PyJWT n'est utile qu'au premier appel Kling
+
     now = int(time.time())
     payload = {
         "iss": config.KLING_ACCESS_KEY,
@@ -110,6 +114,8 @@ def _http_error(status: int, data: dict) -> KlingError:
 
 async def _send_with_retry(method: str, endpoint: str, **kwargs) -> tuple[httpx.Response, dict]:
     """Envoie la requete avec reessais bornes. Leve ``KlingError`` si le transport echoue."""
+    import httpx  # import differe : httpx n'est charge qu'au premier appel reseau
+
     headers = dict(kwargs.pop("headers", {}))
     headers["Authorization"] = f"Bearer {generate_jwt_token()}"
     headers.setdefault("Content-Type", "application/json")

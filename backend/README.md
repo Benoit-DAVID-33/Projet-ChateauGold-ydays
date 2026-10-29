@@ -46,9 +46,10 @@ backend/
 │   ├── caching.py          # TTLCache + gzip selectif + cache statique
 │   ├── security.py         # Facade utilisateurs (hachage + cache)
 │   ├── db/                 # Persistance SQLAlchemy (plug-and-play)
+│   │   ├── contract.py     # Contrat UserStore (sans dependance lourde)
 │   │   ├── engine.py       # Moteur + fabrique de sessions (DATABASE_URL)
 │   │   ├── models.py       # Modeles SQLAlchemy (User)
-│   │   ├── repository.py   # Contrat UserStore + impl. SQLAlchemy
+│   │   ├── repository.py   # Implementation SQLAlchemy du contrat
 │   │   ├── json_store.py   # Impl. fichier JSON (repli / tests)
 │   │   └── seed.py         # Import users.json -> base
 │   ├── deps.py             # Dependances d'auth (401 / redirection login)
@@ -146,12 +147,17 @@ son implémentation, seulement du contrat `UserStore`.
 
 ```
 server/db/
+  contract.py     # UserRecord + UserStore (contrat, sans dependance lourde)
   engine.py       # engine + SessionLocal, a partir de DATABASE_URL
   models.py       # User (id, username, email, password_hash, created_at)
-  repository.py   # UserStore (ABC) + SqlAlchemyUserStore
+  repository.py   # SqlAlchemyUserStore (implementation du contrat)
   json_store.py   # JsonUserStore (repli, comportement d'origine)
   seed.py         # import users.json -> base (une seule fois)
 ```
+
+> Le contrat (`contract.py`) est volontairement **sans dépendance lourde** : il
+> est chargé au démarrage, alors que SQLAlchemy ne l'est qu'au premier accès à
+> la base (voir la section « Démarrage à froid »).
 
 - **Par défaut** : `USER_STORE=sqlalchemy`, `DATABASE_URL=sqlite:///…/data/app.db`.
 - **Repli** : `USER_STORE=json` réutilise le fichier `users.json` (aucune base).
@@ -187,33 +193,64 @@ def exemple(session: Session = Depends(get_session)):
 
 Méthode : 120 requêtes séquentielles, 10 de chauffe, en localhost (Windows).
 Avant = version Flask du dépôt (`app.py`, serveur de dev Werkzeug, threadé) ;
-après = FastAPI sur Uvicorn (1 worker).
+après = FastAPI sur **granian** (ASGI).
 
 | Métrique | Avant (Flask) | Après (FastAPI) | Écart |
 | --- | --- | --- | --- |
-| `GET /login` — moyenne | 14,13 ms | **1,18 ms** | **÷12** |
-| `GET /login` — p95 | 20,56 ms | **1,64 ms** | ÷13 |
-| `GET /static/css/style.css` — moyenne | 14,16 ms | **2,84 ms** | ÷5 |
+| `GET /login` — moyenne | 10,97 ms | **1,99 ms** | **÷5,5** |
+| `GET /login` — p95 | 25,45 ms | **2,75 ms** | ÷9 |
+| `GET /static/css/style.css` — moyenne | 13,89 ms | **5,17 ms** | ÷2,7 |
 | Poids transféré `GET /login` | 9 453 o | **2 338 o** | **−75 %** (gzip) |
 | Poids transféré `GET /static` | 42 399 o | **7 857 o** | **−81 %** (gzip) |
-| Démarrage à froid | 1 172 ms | 1 579 ms | +35 % (imports en plus : SQLAlchemy…) |
+| Démarrage à froid | **579 ms** | 977 ms | +69 % (voir ci-dessous) |
+
+### Démarrage à froid : diagnostic et optimisation
+
+Le démarrage à froid était le seul point où la nouvelle version était **plus
+lente**. Mesures à l'appui, la cause n'était ni la compilation bytecode (temps
+identique à froid et à chaud) ni le serveur, mais **les imports de bibliothèques
+tierces** : SQLAlchemy (~300 ms), `httpx` (~130 ms), `werkzeug` (~51 ms),
+PyJWT. Un import dans un thread n'aide pas (le GIL sérialise).
+
+Correctif appliqué : **chargement paresseux** — ces bibliothèques ne sont plus
+importées au démarrage, seulement au premier besoin réel.
+
+| Étape | Avant optimisation | Après optimisation |
+| --- | --- | --- |
+| Import de l'application | ~1 160 ms | **~620 ms** (−47 %) |
+| Démarrage à froid (granian) | ~1 579 ms | **~977 ms** (−38 %) |
+
+Bibliothèques effectivement **absentes du démarrage** : `sqlalchemy`, `httpx`,
+`werkzeug`, `jwt` (vérifié par introspection de `sys.modules`). La base est
+initialisée en arrière-plan, et l'import SQLAlchemy se fait au premier accès
+réel à la base.
+
+**Résidu honnête** : il reste ~400 ms d'écart avec Flask. Il est **structurel** :
+- le paquet `fastapi` (avec Starlette + Pydantic) pèse ~419 ms à lui seul,
+  contre ~282 ms pour `flask` ;
+- le serveur ASGI coûte ~500 ms de démarrage sur Windows, contre ~120 ms pour
+  le serveur de dev Werkzeug (mesuré avec une application ASGI minimale).
+
+Autrement dit, **l'écart restant n'est pas dans notre code** : il vient du choix
+de la pile ASGI. Le rejoindre totalement impliquerait d'abandonner FastAPI, ce
+qui contredirait les autres objectifs (async, validation, multi-workers). À
+noter : en conteneur Linux (Docker/Render), le coût de démarrage d'un process
+est nettement plus faible que sur Windows, donc l'écart réel en production est
+plus réduit.
 
 **Honnêteté sur ces chiffres** : ce n'est pas une comparaison « serveur de prod
-contre serveur de prod » (Werkzeug dev vs Uvicorn), ni un test de charge. Sur
-localhost, en une passe, ces valeurs sont **indicatives**. Le gain de latence
-vient surtout de l'ASGI + gzip + cache ; le surcoût de démarrage vient du nombre
-de dépendances importées. En production, remplacer Uvicorn par **granian**
-(`--workers N`) ajoute le parallélisme multi-processus.
+contre serveur de prod » (Werkzeug dev vs granian), ni un test de charge. Sur
+localhost, ces valeurs sont **indicatives**.
 
 ### Les autres axes
 
 | Axe | Avant (Flask monolithe) | Après (FastAPI modulaire) |
 | --- | --- | --- |
 | **Performance** | I/O bloquante, serveur de dev, pas de compression | Async (`httpx`), ASGI multi-workers, gzip, cache, ETag |
-| **Qualité** | Pas de tests, pas de lint/typage | 100 tests, **89 %** de couverture, ruff + mypy + pylint 10/10 |
+| **Qualité** | Pas de tests, pas de lint/typage | 106 tests, **87 %** de couverture, ruff + mypy + pylint 10/10 |
 | **Sécurité** | Routes sensibles publiques, `debug=True`, `users.json` dans Git | Auth systématique, `debug` off, `SECRET_KEY` obligatoire, secrets hors dépôt |
 | **Robustesse** | `except Exception` qui fuit `str(e)` | Erreurs typées (`KlingError`, `MailError`), handler global sans fuite |
-| **Optimisation** | 1 requête = 1 lecture disque, pas de cache | Cache mémoire, gzip, cache HTTP, bytecode Jinja |
+| **Optimisation** | 1 requête = 1 lecture disque, pas de cache | Cache mémoire, gzip, cache HTTP, ETag, bytecode Jinja, imports paresseux |
 | **Extensibilité** | Tout dans un fichier | Un module = une responsabilité, base branchable (SQLAlchemy) |
 | **Maintenabilité** | 600 lignes couplées | Routeurs + services + docstrings, nommage explicite |
 
@@ -238,11 +275,13 @@ python run_tests.py            # ou : pytest
 | `mypy` | 0 erreur |
 | `pylint` | **10.00 / 10** |
 | `bandit` | 3 alertes **Low** — justifiées : `import subprocess` + appel FFmpeg sans `shell`, chemin résolu via `shutil.which`, arguments fixes (pas d'injection) |
-| `pytest` | **100 tests**, couverture **89 %** |
+| `pytest` | **106 tests**, couverture **87 %** |
 
-Une exception de configuration est documentée dans `pyproject.toml`
-(`good-names = ["SessionLocal"]`) : c'est le nom conventionnel SQLAlchemy, pas
-un contournement.
+Deux exceptions de configuration sont documentées dans `pyproject.toml` :
+- `good-names` : `SessionLocal` (nom conventionnel SQLAlchemy) et les états
+  mutables de module `_store` / `_initialized` ;
+- `import-outside-toplevel` désactivé : choix assumé du **chargement paresseux**
+  des bibliothèques lourdes pour le démarrage à froid.
 
 ---
 

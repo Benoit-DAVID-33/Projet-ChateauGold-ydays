@@ -11,8 +11,6 @@ implicite) et arguments fixes sans shell, ce qui exclut l'injection de commande.
 import shutil
 import subprocess
 
-from werkzeug.utils import secure_filename
-
 from . import config
 
 
@@ -48,12 +46,16 @@ def mimetype_for(filename: str) -> str:
 
 def clean_filename(filename: str) -> str | None:
     """Retourne un nom de fichier assaini, ou None s'il est inutilisable."""
+    from werkzeug.utils import secure_filename  # import differe
+
     safe = secure_filename(filename or "")
     return safe or None
 
 
 def safe_path(folder, filename: str):
     """Retourne un chemin sur dans `folder`, ou None en cas de traversee."""
+    from werkzeug.utils import secure_filename  # import differe
+
     safe_name = secure_filename(filename or "")
     if not safe_name:
         return None

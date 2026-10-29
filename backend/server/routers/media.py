@@ -6,7 +6,6 @@ import subprocess
 import tempfile
 from urllib.parse import quote
 
-import httpx
 from fastapi import APIRouter, Depends, File, HTTPException, Request, UploadFile
 from fastapi.responses import FileResponse, JSONResponse, RedirectResponse, Response
 from starlette.background import BackgroundTask
@@ -108,6 +107,8 @@ async def delete_file(filename: str, _: str = Depends(require_user)):
 
 async def _forward_media_to_external(filename: str, query: str, folder) -> Response:
     """Envoie un media + requete a l'API externe et sauvegarde le resultat."""
+    import httpx  # import differe (voir server.http)
+
     path = media_tools.safe_path(folder, filename)
     if path is None or not path.is_file():
         return JSONResponse({"error": "Fichier non trouvé"}, status_code=404)
@@ -168,6 +169,8 @@ async def send_to_api(filename: str, request: Request, _: str = Depends(require_
 @router.post("/send-query-to-api")
 async def send_query_to_api(payload: QueryPayload, _: str = Depends(require_user)):
     """Envoie une requete texte (et un media optionnel) a l'API externe."""
+    import httpx  # import differe (voir server.http)
+
     query = payload.query or ""
     filename = payload.filename
 
@@ -205,6 +208,8 @@ async def send_query_to_api(payload: QueryPayload, _: str = Depends(require_user
 @router.post("/process-query")
 async def process_query(request: Request, _: str = Depends(require_user)):
     """Proxy des elements annotees vers l'API externe (bouton ENVOYER de la page image)."""
+    import httpx  # import differe (voir server.http)
+
     form = await request.form()
     upload = form.get("file")
     client = api_client.get_api_client()

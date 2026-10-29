@@ -21,16 +21,16 @@ fichiers statiques, gestionnaires d'exceptions et routeurs.
 """
 
 import logging
+import threading
 from contextlib import asynccontextmanager
 from urllib.parse import quote
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
-from fastapi.staticfiles import StaticFiles
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import api_client, config, db, kling
-from .caching import SelectiveGZipMiddleware, StaticCacheMiddleware
+from . import api_client, config, kling
+from .caching import CompressibleStaticFiles, SelectiveGZipMiddleware, StaticCacheMiddleware
 from .deps import NotAuthenticated
 from .kling import KlingError
 from .routers import auth, media, pages
@@ -40,11 +40,23 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 logger = logging.getLogger("goldfx")
 
 
+def _warm_database() -> None:
+    """Initialise la base en arriere-plan (l'import SQLAlchemy est ainsi differe)."""
+    from sqlalchemy.exc import SQLAlchemyError
+
+    try:
+        from . import db
+
+        db.init_db()
+    except (OSError, SQLAlchemyError):
+        logger.exception("Initialisation de la base de donnees échouée")
+
+
 @asynccontextmanager
 async def lifespan(_: FastAPI):
-    """Cycle de vie : initialise la base de donnees et ferme les clients HTTP."""
+    """Cycle de vie : prepare la base en arriere-plan et ferme les clients HTTP."""
     logger.info("GOLD FX demarre (API externe : %s)", config.API_BASE_URL)
-    db.init_db()
+    threading.Thread(target=_warm_database, name="db-warmup", daemon=True).start()
     yield
     await kling.aclose()
     await api_client.aclose()
@@ -87,7 +99,11 @@ def create_app() -> FastAPI:
             )
         return await call_next(request)
 
-    app.mount("/static", StaticFiles(directory=str(config.STATIC_DIR)), name="static")
+    app.mount(
+        "/static",
+        CompressibleStaticFiles(directory=str(config.STATIC_DIR)),
+        name="static",
+    )
 
     @app.exception_handler(NotAuthenticated)
     async def _not_authenticated(request: Request, _exc: NotAuthenticated):

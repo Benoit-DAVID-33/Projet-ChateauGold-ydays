@@ -8,7 +8,7 @@ import json
 import logging
 from pathlib import Path
 
-from .repository import UserStore
+from .contract import UserStore
 
 logger = logging.getLogger("goldfx")
 
