@@ -1,68 +1,67 @@
-from flask import Flask, request, send_file
+"""API externe de traitement (demonstration).
+
+Service distinct (port 5001) recevant medias et requetes texte. La logique de
+traitement est volontairement simulee : le media est renvoye tel quel et la
+requete texte recoit une reponse d'accuse de reception.
+"""
+
+import logging
+import mimetypes
 import os
+from datetime import datetime
+from pathlib import Path
+
+from fastapi import FastAPI, File, Form, UploadFile
+from fastapi.responses import FileResponse, JSONResponse
+from pydantic import BaseModel, Field
 from werkzeug.utils import secure_filename
 
-app = Flask(__name__)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+logger = logging.getLogger("goldfx.api")
 
-DATA_DIR = os.environ.get("DATA_DIR", os.path.join(os.path.dirname(os.path.abspath(__file__)), "data"))
-UPLOAD_FOLDER = os.path.join(DATA_DIR, "api_uploads")
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+DATA_DIR = Path(os.environ.get("DATA_DIR", str(Path(__file__).resolve().parent / "data")))
+UPLOAD_FOLDER = DATA_DIR / "api_uploads"
+UPLOAD_FOLDER.mkdir(parents=True, exist_ok=True)
 
-@app.route("/process-video", methods=["POST"])
-def process_video():
-    file = request.files.get("file")
-    if not file:
-        return {"error": "Aucun fichier reçu"}, 400
+app = FastAPI(title="GOLD FX — API externe (démo)", version="1.0")
 
-    # Récupérer le texte de la requête s'il existe
-    query = request.form.get("query", "")
-    
-    filename = secure_filename(file.filename)
-    path = os.path.join(UPLOAD_FOLDER, filename)
-    file.save(path)
 
-    # 👉 Ici normalement : traitement vidéo/image (IA, compression, etc.)
-    # Le texte de la requête (query) est disponible pour le traitement
-    # Pour la démo : on renvoie le même fichier
-    
-    # Détecter le type de fichier
-    ext = filename.rsplit('.', 1)[1].lower() if '.' in filename else ''
-    if ext in ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp']:
-        mimetype = f"image/{ext}" if ext != 'jpg' else "image/jpeg"
-    elif ext in ['mp4', 'avi', 'mov', 'mkv', 'webm']:
-        mimetype = "video/mp4"
-    else:
-        mimetype = "application/octet-stream"
+class QueryRequest(BaseModel):
+    """Corps de /process-query : requete texte a traiter."""
 
-    # Log pour debug (peut être retiré en production)
+    query: str = Field(default="", max_length=4000)
+
+
+@app.get("/health")
+async def health():
+    """Sonde de disponibilite du service."""
+    return {"status": "ok"}
+
+
+@app.post("/process-video")
+async def process_video(file: UploadFile = File(...), query: str = Form(default="")):
+    """Recoit un media (+ requete optionnelle) et renvoie le media traite (demo : identique)."""
+    filename = secure_filename(file.filename or "upload.bin") or "upload.bin"
+    path = UPLOAD_FOLDER / filename
+    path.write_bytes(await file.read())
+
     if query:
-        print(f"📝 Requête texte reçue avec le média: {query}")
+        logger.info("Requête texte reçue avec le média : %s", query)
 
-    return send_file(
-        path,
-        mimetype=mimetype,
-        as_attachment=True,
-        download_name="processed_" + filename
-    )
+    mimetype = mimetypes.guess_type(filename)[0] or "application/octet-stream"
+    return FileResponse(str(path), media_type=mimetype, filename="processed_" + filename)
 
-@app.route("/process-query", methods=["POST"])
-def process_query():
-    """Route pour traiter les requêtes texte de la barre de recherche"""
-    data = request.get_json()
-    query = data.get("query", "")
-    
+
+@app.post("/process-query")
+async def process_query(payload: QueryRequest):
+    """Recoit une requete texte et renvoie un accuse de reception (demo)."""
+    query = payload.query.strip()
     if not query:
-        return {"error": "Aucune requête reçue"}, 400
-    
-    # 👉 Ici normalement : traitement de la requête (IA, recherche, etc.)
-    # Pour la démo : on renvoie une réponse simple
-    
+        return JSONResponse({"error": "Aucune requête reçue"}, status_code=400)
+
     return {
         "status": "success",
         "query": query,
         "response": f"Requête reçue : '{query}'. Traitement en cours...",
-        "timestamp": __import__('datetime').datetime.now().isoformat()
+        "timestamp": datetime.now().isoformat(),
     }
-
-if __name__ == "__main__":
-    app.run(port=5001, debug=True)

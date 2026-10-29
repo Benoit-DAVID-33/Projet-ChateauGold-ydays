@@ -8,13 +8,27 @@ services:
       - "5000:5000"
     environment:
       API_BASE_URL: http://api:5001
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY doit etre defini dans .env (voir .env.example)}
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      SECRET_KEY: ${SECRET_KEY:-dev-secret-key-change-in-production}
+      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-ricardo.mbesob@ynov.com}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-}
+      KLING_ACCESS_KEY: ${KLING_ACCESS_KEY:-}
+      KLING_SECRET_KEY: ${KLING_SECRET_KEY:-}
+      KLING_API_BASE_URL: ${KLING_API_BASE_URL:-https://api.klingai.com}
+      SESSION_HTTPS_ONLY: ${SESSION_HTTPS_ONLY:-false}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-500}
     volumes:
       - ./backend/data:/app/backend/data
     depends_on:
-      - api
+      api:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/login')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s
 
   api:
     build:
@@ -25,3 +39,9 @@ services:
       - "5001:5001"
     volumes:
       - ./backend/data/api_uploads:/app/backend/data/api_uploads
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

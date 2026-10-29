@@ -1,6 +1,10 @@
 # GOLD FX — Gestion et édition de médias avec IA
 
-Application web **Flask** qui permet le traitement des **vidéos** et **images**, avec ajout d'**effets spéciaux**. Interface **GOLD FX** avec éditeur canvas, export vidéo annoté, API externe de traitement, **Assistant IA** (prompt engineering) et intégration **Kling AI**.
+Application web **FastAPI** (ASGI) qui permet le traitement des **vidéos** et **images**, avec ajout d'**effets spéciaux**. Interface **GOLD FX** avec éditeur canvas, export vidéo annoté, API externe de traitement, **Assistant IA** (prompt engineering) et intégration **Kling AI**.
+
+> **Architecture du backend, performances, cache et base de données** : voir
+> [`backend/README.md`](backend/README.md) (carte du code, comparatif avant/après,
+> gestion des erreurs Kling, guide SQLAlchemy plug-and-play).
 
 ## Accès en ligne
 
@@ -55,6 +59,9 @@ pip install -r backend/requirements.txt
 Créez un fichier `.env` à la racine (non versionné) :
 
 ```env
+# Clé secrète des sessions (obligatoire en production)
+SECRET_KEY=changez-moi-par-une-cle-aleatoire
+
 # API externe (traitement médias / requêtes)
 API_BASE_URL=http://localhost:5001
 
@@ -70,23 +77,39 @@ KLING_API_BASE_URL=https://api.klingai.com
 # URL publique pour Omni-Video (vidéo locale → Kling)
 # Ex. avec ngrok : ngrok http 5000 puis :
 PUBLIC_BASE_URL=https://xxxx.ngrok-free.app
+
+# Sessions / uploads
+SESSION_HTTPS_ONLY=false
+MAX_UPLOAD_MB=500
 ```
 
 
 | Variable          | Rôle                                                            |
 | ----------------- | --------------------------------------------------------------- |
+| `SECRET_KEY`      | Signature des sessions (obligatoire en production)              |
 | `API_BASE_URL`    | URL de `external_api.py` (défaut : `http://localhost:5001`)     |
 | `MAIL_*`          | Envoi du formulaire Contact                                     |
 | `KLING_*`         | Authentification API Kling (JWT)                                |
 | `PUBLIC_BASE_URL` | Requis pour transformer une vidéo uploadée via Kling Omni-Video |
+| `MAX_UPLOAD_MB`   | Taille maximale des uploads (défaut : 500)                      |
 
 
 ## Lancement
 
-### Application web
+### Application web (FastAPI / ASGI)
+
+Développement (rechargement automatique) :
 
 ```bash
-python backend/app.py
+cd backend
+uvicorn main:app --reload --port 5000
+```
+
+Production (serveur granian, plusieurs workers) :
+
+```bash
+cd backend
+granian --interface asgi --host 0.0.0.0 --port 5000 --workers 2 main:app
 ```
 
 → [http://localhost:5000](http://localhost:5000)
@@ -96,7 +119,8 @@ python backend/app.py
 Dans un second terminal :
 
 ```bash
-python backend/external_api.py
+cd backend
+uvicorn external_api:app --port 5001
 ```
 
 → [http://localhost:5001](http://localhost:5001)
@@ -108,10 +132,10 @@ docker compose up --build
 ```
 
 
-| Service | Port | Rôle                                           |
-| ------- | ---- | ---------------------------------------------- |
-| `web`   | 5000 | Application Flask (FFmpeg inclus dans l’image) |
-| `api`   | 5001 | API externe de traitement                      |
+| Service | Port | Rôle                                              |
+| ------- | ---- | ------------------------------------------------- |
+| `web`   | 5000 | Application FastAPI (FFmpeg inclus dans l’image)  |
+| `api`   | 5001 | API externe de traitement                         |
 
 
 Volume monté : `backend/data/` (`images/`, `videos/`, `api_uploads/`, `users.json`).
@@ -146,7 +170,7 @@ Documentation complémentaire :
 
 ### Kling AI (optionnel)
 
-Routes proxy dans `app.py` (clés dans `.env`) :
+Routes proxy dans `server/routers/kling.py` (clés dans `.env`, authentification requise) :
 
 
 | Méthode | Route                                    | Description                             |
@@ -172,14 +196,28 @@ Micro dans la barre de recherche (Chrome, Edge, Safari) : dictée → champ de r
 
 ```
 projet ydays/
-├── backend/                  # Serveur Flask (Python)
-│   ├── app.py                # Application Flask principale
-│   ├── external_api.py       # API externe (process-video, process-query)
-│   ├── kling_api.py          # Client API Kling AI
+├── backend/                  # Serveur FastAPI (Python, ASGI)
+│   ├── main.py               # Point d'entrée ASGI (create_app)
+│   ├── server/               # Application modulaire
+│   │   ├── __init__.py       # create_app : middleware, routeurs, erreurs
+│   │   ├── config.py         # Configuration (variables d'environnement)
+│   │   ├── security.py       # Utilisateurs + hachage des mots de passe
+│   │   ├── deps.py           # Dépendances d'authentification
+│   │   ├── schemas.py        # Modèles Pydantic (validation)
+│   │   ├── media.py          # Médias : extensions, chemins sûrs, FFmpeg
+│   │   ├── mailer.py         # Envoi d'emails (SMTP)
+│   │   ├── kling.py          # Client async Kling AI (httpx)
+│   │   ├── api_client.py     # Client async vers l'API externe
+│   │   ├── templating.py     # Rendu Jinja2 + compatibilité Flask
+│   │   └── routers/          # auth, pages, media, kling
+│   ├── external_api.py       # API externe (FastAPI, port 5001)
 │   ├── requirements.txt
-│   ├── run_tests.py
+│   ├── requirements-dev.txt  # pytest, ruff
+│   ├── pyproject.toml        # Config ruff + pytest
+│   ├── tests/                # Tests pytest
+│   ├── run_tests.py          # Lanceur de tests
 │   └── data/                 # Données : images/, videos/, api_uploads/, users.json
-├── frontend/                 # Interface (servie par Flask)
+├── frontend/                 # Interface (servie par FastAPI)
 │   ├── static/
 │   │   ├── css/   (style.css, prompt-manager.css)
 │   │   └── js/    (script.js, zoom.js, media-editor.js,
@@ -196,7 +234,9 @@ projet ydays/
 └── GUIDE_PROMPT_ENGINEERING.md
 ```
 
-## Routes principales (`app.py`)
+## Routes principales
+
+Les routes sont réparties dans `backend/server/routers/` (`pages`, `auth`, `media`, `kling`).
 
 **Pages**
 
@@ -206,11 +246,12 @@ projet ydays/
 | `GET /`                | Accueil (landing)                 |
 | `GET /video`, `/image` | Édition médias                    |
 | `GET /information`     | Documentation intégrée            |
-| `GET /contact`         | Formulaire (email via Flask-Mail) |
+| `GET /contact`         | Formulaire (email via SMTP)       |
 | `GET /search?q=`       | Recherche                         |
+| `GET /login`, `/register`, `/logout` | Authentification      |
 
 
-**API médias**
+**API médias** (authentification requise)
 
 
 | Route                            | Description                       |
@@ -220,10 +261,13 @@ projet ydays/
 | `POST /delete/<f>`               | Supprimer                         |
 | `POST /send-to-api/<f>`          | Proxy vers API externe            |
 | `POST /send-query-to-api`        | Requête texte (+ média optionnel) |
+| `POST /process-query`            | Éléments annotés → API externe    |
 | `POST /api/convert-webm-to-mp4`  | Conversion enregistrement annoté  |
 
 
-Voir la section **Kling AI** pour les routes `/kling/`*.
+**Documentation interactive** : `GET /api/docs` (OpenAPI).
+
+Voir la section **Kling AI** pour les routes `/kling/*` (toutes protégées par authentification).
 
 ## Formats supportés
 
@@ -235,25 +279,41 @@ Voir la section **Kling AI** pour les routes `/kling/`*.
 
 Principales (voir `backend/requirements.txt`) :
 
-- Flask 3.1.2, Werkzeug, Jinja2
-- Flask-Mail, requests, python-dotenv
-- PyJWT (authentification Kling)
+- FastAPI, Starlette, Uvicorn / Granian (ASGI)
+- Pydantic v2 (validation), sérialisation JSON native rapide
+- httpx (client HTTP asynchrone), Jinja2, python-multipart
+- itsdangerous (sessions), Werkzeug (hachage), PyJWT, python-dotenv
+
+Outils de développement (`backend/requirements-dev.txt`) : pytest, ruff.
+
+### Qualité et tests
+
+```bash
+cd backend
+pip install -r requirements.txt -r requirements-dev.txt
+ruff check . && ruff format --check .   # lint + format
+python run_tests.py                     # ou : pytest
+```
 
 ## Sécurité (production)
 
-- Désactiver `debug=True`
-- Serveur WSGI (Gunicorn, uWSGI)
-- Limiter la taille des uploads et valider les types MIME
-- HTTPS, secrets uniquement via variables d’environnement
-- Ne pas committer `.env`
+- Serveur ASGI multi-workers (granian), pas de serveur de développement
+- `debug` désactivé, erreurs non détaillées renvoyées au client
+- Authentification requise sur toutes les routes médias et `/kling/*`
+- `SECRET_KEY` obligatoire (sessions signées, `SESSION_HTTPS_ONLY=true` derrière HTTPS)
+- Limite de taille d'upload (`MAX_UPLOAD_MB`) et validation des extensions
+- Chemins de fichiers assainis (pas de traversée de répertoire)
+- Mots de passe hachés (PBKDF2) ; secrets uniquement via variables d'environnement
+- Ne pas committer `.env` ni `backend/data/users.json`
 
 ## Démarrage rapide
 
 ```bash
 pip install -r backend/requirements.txt
-# Copier et remplir .env (MAIL, KLING si besoin)
-python backend/external_api.py    # terminal 1
-python backend/app.py             # terminal 2
+# Copier et remplir .env (SECRET_KEY, MAIL, KLING si besoin)
+cd backend
+uvicorn external_api:app --port 5001     # terminal 1
+uvicorn main:app --port 5000             # terminal 2
 # Ouvrir http://localhost:5000
 ```
 
@@ -266,6 +326,14 @@ Projet fourni tel quel, sans garantie.
 Projet développé dans le cadre de **YDays**.
 
 ## Changelog
+
+### Version 4.0
+
+- **Migration Flask → FastAPI** (ASGI) : application modulaire (`server/`), routeurs `pages`/`auth`/`media`/`kling`
+- **Performance** : client HTTP asynchrone `httpx` (I/O non bloquants), serveur **granian** multi-workers, `orjson`, validation **Pydantic v2**
+- **Robustesse** : FFmpeg exécuté dans un thread, conversions atomiques, gestion d'erreurs sans fuite, config centralisée
+- **Sécurité** : authentification sur les routes médias et `/kling/*`, limite d'upload, chemins assainis, `SECRET_KEY` obligatoire
+- **Qualité** : ruff (lint + format), tests pytest, documentation OpenAPI (`/api/docs`)
 
 ### Version 3.0
 

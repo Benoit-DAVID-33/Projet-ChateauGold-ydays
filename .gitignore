@@ -24,11 +24,23 @@ responses/
 # Environnement Python
 env/
 venv/
+.venv/
 __pycache__/
 *.pyc
 *.pyo
 *.pyd
 .Python
+
+# Donnees sensibles / generees (base locale, utilisateurs, caches)
+backend/data/users.json
+backend/data/*.db
+backend/data/jinja_cache/
+
+# Caches d'outils
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
 
 # Fichiers système
 .DS_Store

@@ -14,10 +14,10 @@ COPY frontend frontend
 WORKDIR /app/backend
 
 ENV PYTHONUNBUFFERED=1
-ENV FLASK_ENV=production
 ENV API_BASE_URL=http://api:5001
-ENV FLASK_APP=app.py
 
 EXPOSE 5000
 
-CMD ["flask", "run", "--host=0.0.0.0", "--port=5000"]
+# Serveur ASGI granian (Rust) : plusieurs workers = plusieurs processus,
+# donc plusieurs GIL et un vrai parallelisme pour les sous-processus FFmpeg.
+CMD ["granian", "--interface", "asgi", "--host", "0.0.0.0", "--port", "5000", "--workers", "2", "main:app"]
