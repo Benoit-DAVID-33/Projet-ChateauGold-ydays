@@ -94,6 +94,39 @@ TEMPLATE_AUTO_RELOAD = _env_bool("TEMPLATE_AUTO_RELOAD", False)
 DATABASE_URL = os.environ.get("DATABASE_URL", f"sqlite:///{(DATA_DIR / 'app.db').as_posix()}")
 USER_STORE = os.environ.get("USER_STORE", "sqlalchemy").strip().lower()
 
+
+def _env_list(name: str, default: str) -> list[str]:
+    return [item.strip() for item in os.environ.get(name, default).split(",") if item.strip()]
+
+
+def _env_quotas(name: str) -> dict[str, int]:
+    """Parse "kling=100,huggingface=1000" en {"kling": 100, ...}."""
+    quotas: dict[str, int] = {}
+    for item in os.environ.get(name, "").split(","):
+        if "=" in item:
+            key, _, value = item.partition("=")
+            if value.strip().isdigit():
+                quotas[key.strip()] = int(value.strip())
+    return quotas
+
+
+# --- Routage multi-fournisseurs (proxy LLM / generation) ---
+# Ordre de priorite des fournisseurs ; le routeur choisit le premier eligible.
+LLM_PROVIDER_PRIORITY = _env_list("LLM_PROVIDER_PRIORITY", "kling,huggingface,local")
+# Quotas quotidiens par fournisseur (vide = illimite). Ex : "kling=100,huggingface=1000".
+LLM_QUOTAS = _env_quotas("LLM_QUOTAS")
+LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "60"))
+
+# Hugging Face Inference (routeur compatible API OpenAI) - ex. MiniMax, Qwen...
+HF_API_BASE_URL = os.environ.get("HF_API_BASE_URL", "https://router.huggingface.co/v1").rstrip("/")
+HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
+HF_MODEL = os.environ.get("HF_MODEL", "MiniMaxAI/MiniMax-M2")
+
+# LLM local (Ollama, vLLM, llama.cpp...) expose en API compatible OpenAI.
+LOCAL_LLM_BASE_URL = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1").rstrip("/")
+LOCAL_LLM_MODEL = os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
+LOCAL_LLM_API_KEY = os.environ.get("LOCAL_LLM_API_KEY", "local")
+
 # --- Medias ---
 ALLOWED_VIDEO_EXTENSIONS = {"mp4", "avi", "mov", "mkv", "webm"}
 ALLOWED_IMAGE_EXTENSIONS = {"jpg", "jpeg", "png", "gif", "bmp", "webp", "svg"}

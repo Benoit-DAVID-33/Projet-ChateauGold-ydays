@@ -4,3 +4,6 @@ ruff>=0.8
 mypy>=1.13
 bandit>=1.8
 pylint>=3.3
+sphinx>=8.1
+sphinx-rtd-theme>=3.0
+snakeviz>=2.2

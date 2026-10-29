@@ -4,7 +4,8 @@ Application web **FastAPI** (ASGI) qui permet le traitement des **vidéos** et *
 
 > **Architecture du backend, performances, cache et base de données** : voir
 > [`backend/README.md`](backend/README.md) (carte du code, comparatif avant/après,
-> gestion des erreurs Kling, guide SQLAlchemy plug-and-play).
+> gestion des erreurs Kling, guide SQLAlchemy plug-and-play, proxy multi-fournisseurs
+> LLM, taxonomie des tests, profilage/charge, documentation Sphinx).
 
 ## Accès en ligne
 

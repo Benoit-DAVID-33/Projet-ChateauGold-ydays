@@ -33,7 +33,7 @@ from . import api_client, config, kling
 from .caching import CompressibleStaticFiles, SelectiveGZipMiddleware, StaticCacheMiddleware
 from .deps import NotAuthenticated
 from .kling import KlingError
-from .routers import auth, media, pages
+from .routers import auth, llm, media, pages
 from .routers import kling as kling_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -126,5 +126,6 @@ def create_app() -> FastAPI:
     app.include_router(pages.router)
     app.include_router(media.router)
     app.include_router(kling_router.router)
+    app.include_router(llm.router)
 
     return app

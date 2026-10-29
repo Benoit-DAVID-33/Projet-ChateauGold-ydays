@@ -1,7 +1,49 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "goldfx-backend"
+version = "4.0.0"
+description = "Backend FastAPI de l'application GOLD FX (gestion et edition de medias avec IA)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.34",
+    "granian>=2.0",
+    "httpx>=0.28",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.20",
+    "pydantic>=2.10",
+    "itsdangerous>=2.2",
+    "werkzeug>=3.1",
+    "python-dotenv>=1.0",
+    "PyJWT>=2.9",
+    "SQLAlchemy>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "bandit>=1.8",
+    "pylint>=3.3",
+    "sphinx>=8.1",
+    "sphinx-rtd-theme>=3.0",
+    "snakeviz>=2.2",
+]
+
+# Le backend est un paquet reutilisable : `pip install -e .` depuis backend/.
+[tool.setuptools]
+packages = ["server", "server.db", "server.llm", "server.routers"]
+
 [tool.ruff]
 target-version = "py311"
 line-length = 100
-extend-exclude = ["data"]
+extend-exclude = ["data", "docs/_build"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "ASYNC", "RUF"]
@@ -16,6 +58,10 @@ extend-immutable-calls = [
     "fastapi.Body",
     "fastapi.Header",
 ]
+
+[tool.ruff.lint.per-file-ignores]
+# Les scripts ajoutent backend/ au sys.path avant d'importer : E402 est attendu.
+"scripts/*" = ["E402"]
 
 [tool.mypy]
 python_version = "3.11"
@@ -57,6 +103,13 @@ show_missing = true
 skip_covered = true
 
 [tool.pytest.ini_options]
-pythonpath = "."
+pythonpath = [".", "tests"]
 testpaths = ["tests"]
-addopts = "--cov --cov-report=term-missing"
+markers = [
+    "unit: tests unitaires (une fonctionnalite isolee, dependances mockees)",
+    "integration: tests d'integration (plusieurs composants ensemble)",
+    "functional: tests fonctionnels (parcours utilisateur complet)",
+    "regression: tests de non-regression (comportement fige a preserver)",
+    "performance: tests de performance / charge (exclus par defaut)",
+]
+addopts = "--cov --cov-report=term-missing -m 'not performance'"

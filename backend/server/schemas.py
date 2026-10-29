@@ -4,6 +4,8 @@ Pydantic v2 (coeur Rust) valide et borne les entrees avant tout appel reseau,
 ce qui evite les payloads malformes ou abusifs.
 """
 
+from typing import Literal
+
 from pydantic import BaseModel, Field
 
 
@@ -50,3 +52,11 @@ class OmniVideoRequest(BaseModel):
     refer_type: str = Field(default="base", max_length=20)
     duration: str = Field(default="5", max_length=5)
     aspect_ratio: str | None = Field(default=None, max_length=10)
+
+
+class LLMGenerateRequest(BaseModel):
+    """Corps de /api/llm/generate (proxy multi-fournisseurs)."""
+
+    capability: Literal["text", "image", "video"] = "text"
+    prompt: str = Field(min_length=1, max_length=4000)
+    options: dict = Field(default_factory=dict)

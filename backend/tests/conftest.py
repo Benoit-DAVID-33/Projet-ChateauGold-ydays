@@ -1,10 +1,30 @@
-"""Fixtures partagees par les tests."""
+"""Fixtures partagees et categorisation automatique des tests.
+
+Les tests sont ranges par dossier (taxonomie du cours) :
+``unit/``, ``integration/``, ``functional/``, ``regression/``, ``performance/``.
+Le marqueur correspondant est applique automatiquement selon le dossier, ce qui
+permet de lancer une categorie : ``pytest -m unit``, ``pytest -m performance``.
+"""
+
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from server import config, create_app, security
 from server.db import JsonUserStore
+
+_MARKERS = ("unit", "integration", "functional", "regression", "performance")
+
+
+def pytest_collection_modifyitems(items):
+    """Applique le marqueur correspondant au dossier de chaque test."""
+    for item in items:
+        folders = Path(str(item.fspath)).parts
+        for marker in _MARKERS:
+            if marker in folders:
+                item.add_marker(getattr(pytest.mark, marker))
+                break
 
 
 @pytest.fixture(autouse=True)

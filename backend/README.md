@@ -52,6 +52,13 @@ backend/
 │   │   ├── repository.py   # Implementation SQLAlchemy du contrat
 │   │   ├── json_store.py   # Impl. fichier JSON (repli / tests)
 │   │   └── seed.py         # Import users.json -> base
+│   ├── llm/                # Proxy multi-fournisseurs (LLM / generation)
+│   │   ├── base.py         # Contrat Provider (+ request / result)
+│   │   ├── router.py       # Selection (capacite, quota, priorite, repli)
+│   │   ├── quota.py        # Quotas par fournisseur
+│   │   ├── kling_provider.py    # Fournisseur Kling AI
+│   │   ├── openai_provider.py   # API compatible OpenAI (HF, MiniMax, local)
+│   │   └── registry.py     # Construction depuis la configuration
 │   ├── deps.py             # Dependances d'auth (401 / redirection login)
 │   ├── schemas.py          # Modeles Pydantic (validation des corps JSON)
 │   ├── forms.py            # Lecture typee des champs de formulaire
@@ -64,16 +71,28 @@ backend/
 │       ├── auth.py         # /login, /register, /logout
 │       ├── pages.py        # Pages HTML
 │       ├── media.py        # upload, service, suppression, proxy
-│       └── kling.py        # Proxy Kling AI
-├── tests/                  # Suite pytest (100 tests)
+│       ├── kling.py        # Proxy Kling AI (/kling/*)
+│       └── llm.py          # Proxy multi-fournisseurs (/api/llm/*)
+├── tests/                  # Suite pytest, rangee par categorie
+│   ├── unit/               # Tests unitaires (dependances mockees)
+│   ├── integration/        # Tests d'integration (composants ensemble)
+│   ├── functional/         # Tests fonctionnels (parcours utilisateur)
+│   ├── regression/         # Tests de non-regression (comportements figes)
+│   ├── performance/        # Tests de charge (exclus par defaut)
+│   ├── conftest.py         # Fixtures + marqueurs automatiques par dossier
+│   └── helpers.py          # Doublures (fausses reponses / clients)
+├── scripts/                # Outils d'industrialisation
+│   ├── profile_app.py      # Profilage cProfile (+ SnakeViz)
+│   └── load_test.py        # Test de charge (debit, percentiles)
+├── docs/                   # Documentation Sphinx (autodoc + napoleon)
 ├── requirements.txt        # Dependances d'execution
-├── requirements-dev.txt    # Outils qualite (pytest, ruff, mypy, bandit, pylint)
-└── pyproject.toml          # Config ruff / mypy / pylint / coverage / pytest
+├── requirements-dev.txt    # Outils qualite (pytest, ruff, mypy, bandit, pylint, sphinx)
+└── pyproject.toml          # Metadonnees du paquet + config ruff/mypy/pylint/pytest
 ```
 
 **Règle de lecture** : le nom du fichier dit la responsabilité.
-`caching` = cache, `security` = utilisateurs, `db` = base, `routers/*` = HTTP.
-Aucun fichier ne mélange deux responsabilités.
+`caching` = cache, `security` = utilisateurs, `db` = base, `llm` = fournisseurs,
+`routers/*` = HTTP. Aucun fichier ne mélange deux responsabilités.
 
 ### Flux d'une requête
 
@@ -84,10 +103,10 @@ Client
 [ GZip selectif ] → [ Cache statique ] → [ Session signee ] → [ Limite upload ]
   │
   ▼
-Routeur (auth / pages / media / kling)
+Routeur (auth / pages / media / kling / llm)
   │  └─ Dependance d'auth : require_user (401) ou require_user_page (redirect)
   ▼
-Service (security, kling, media_tools, mailer, db)
+Service (security, kling, media_tools, mailer, db, llm.router)
   │  └─ Cache memoire pour les lectures couteuses
   ▼
 Reponse (HTML avec ETag / fichier avec Cache-Control / JSON)
@@ -140,7 +159,56 @@ de création ne sont **pas** réessayés sur 5xx (éviter les doublons de tâche
 
 ---
 
-## 5. Base de données (SQLAlchemy, plug-and-play)
+## 5. Proxy multi-fournisseurs (LLM / génération)
+
+Objectif : pouvoir router une demande vers **Kling AI**, un modèle **Hugging
+Face** (MiniMax, Qwen…), ou un **LLM local** (Ollama, vLLM), **par
+configuration**, sans modifier le code appelant.
+
+Le proxy vit dans `server/llm/` et **ne remplace pas** `/kling/*` : il ajoute un
+namespace distinct `/api/llm/*`. La partie existante continue de fonctionner à
+l'identique.
+
+```
+/api/llm/generate ──▶ Router ──▶ candidats (capacité + quota, par priorité)
+                                  ├─ KlingProvider        (image, video)
+                                  ├─ OpenAICompatible     (text)  ← HF / MiniMax
+                                  └─ OpenAICompatible     (text)  ← LLM local
+```
+
+**Politique de sélection** (dans l'ordre) :
+
+1. **capacité** — le fournisseur sait-il faire ce type de génération ?
+2. **quota** — on écarte ceux ayant atteint leur limite (`LLM_QUOTAS`) ;
+3. **priorité** — ordre de `LLM_PROVIDER_PRIORITY` ;
+4. **cohérence** — une tâche déjà confiée reste chez son fournisseur (le suivi
+   ne change pas de fournisseur en cours de route) ;
+5. **repli** — si le fournisseur échoue, on essaie le suivant.
+
+**Un adaptateur pour plusieurs services** : `OpenAICompatibleProvider` parle
+l'API `/chat/completions`, exposée par Hugging Face (routeur d'inférence),
+MiniMax, vLLM, Ollama… Changer de service = changer trois variables d'env.
+
+| Variable | Rôle |
+| --- | --- |
+| `LLM_PROVIDER_PRIORITY` | Ordre des fournisseurs (ex. `kling,huggingface,local`) |
+| `LLM_QUOTAS` | Quotas quotidiens (ex. `kling=100,huggingface=1000`) |
+| `HF_API_BASE_URL`, `HF_API_TOKEN`, `HF_MODEL` | Hugging Face / MiniMax |
+| `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_API_KEY` | LLM local |
+
+Routes (authentification requise) : `GET /api/llm/providers`,
+`POST /api/llm/generate`, `GET /api/llm/status/{task_id}`.
+
+**Ajouter un fournisseur** : écrire une classe héritant de `Provider`
+(`server/llm/base.py`), l'enregistrer dans `_BUILDERS`
+(`server/llm/registry.py`), puis l'activer via `LLM_PROVIDER_PRIORITY`.
+
+> État : **conception + socle fonctionnel** (routeur, quotas, 2 fournisseurs,
+> tests). Non branché sur l'interface : l'existant n'est pas impacté.
+
+---
+
+## 6. Base de données (SQLAlchemy, plug-and-play)
 
 La base est **optionnelle et branchable** : le reste du code ne dépend jamais de
 son implémentation, seulement du contrat `UserStore`.
@@ -187,7 +255,7 @@ def exemple(session: Session = Depends(get_session)):
 
 ---
 
-## 6. Comparatif avant / après
+## 7. Comparatif avant / après
 
 ### Performance (mesures réelles)
 
@@ -256,14 +324,14 @@ localhost, ces valeurs sont **indicatives**.
 
 ---
 
-## 7. Porte qualité
+## 8. Porte qualité
 
 ```bash
 cd backend
 pip install -r requirements.txt -r requirements-dev.txt
 ruff check . && ruff format --check .
 mypy
-pylint server main.py external_api.py --fail-under=9.5
+pylint server scripts main.py external_api.py --fail-under=9.5
 bandit -q -r server main.py external_api.py
 python run_tests.py            # ou : pytest
 ```
@@ -275,44 +343,126 @@ python run_tests.py            # ou : pytest
 | `mypy` | 0 erreur |
 | `pylint` | **10.00 / 10** |
 | `bandit` | 3 alertes **Low** — justifiées : `import subprocess` + appel FFmpeg sans `shell`, chemin résolu via `shutil.which`, arguments fixes (pas d'injection) |
-| `pytest` | **106 tests**, couverture **87 %** |
+| `pytest` | **128 tests** (+ 1 test de charge), couverture **85 %** |
 
-Deux exceptions de configuration sont documentées dans `pyproject.toml` :
+Trois exceptions de configuration sont documentées et justifiées dans
+`pyproject.toml` :
 - `good-names` : `SessionLocal` (nom conventionnel SQLAlchemy) et les états
   mutables de module `_store` / `_initialized` ;
 - `import-outside-toplevel` désactivé : choix assumé du **chargement paresseux**
-  des bibliothèques lourdes pour le démarrage à froid.
+  des bibliothèques lourdes pour le démarrage à froid ;
+- `wrong-import-position` désactivé dans `scripts/profile_app.py` (ajout de
+  `backend/` au `sys.path` avant les imports).
 
 ---
 
-## 8. Démarrage et tests
+## 9. Tests, qualité et outillage
+
+### Lancer l'application
 
 ```bash
-# Application (ASGI)
 cd backend
-uvicorn main:app --reload --port 5000          # developpement
+uvicorn main:app --reload --port 5000                                      # developpement
 granian --interface asgi --host 0.0.0.0 --port 5000 --workers 2 main:app   # production
-
-# API externe de demo (autre terminal)
-uvicorn external_api:app --port 5001
-
-# Tests + qualite
-python run_tests.py
+uvicorn external_api:app --port 5001                                       # API externe (autre terminal)
 ```
 
 Documentation interactive de l'API : `GET /api/docs`.
 
+### Taxonomie des tests
+
+Les tests sont rangés par catégorie (dossier = catégorie, marqueur appliqué
+automatiquement) :
+
+| Catégorie | Dossier | Ce qu'elle vérifie |
+| --- | --- | --- |
+| **Unitaire** | `tests/unit/` | Une fonctionnalité isolée, dépendances mockées |
+| **Intégration** | `tests/integration/` | Plusieurs composants ensemble (routes + services) |
+| **Fonctionnel** | `tests/functional/` | Parcours utilisateur complet, conforme aux spécifications |
+| **Non-régression** | `tests/regression/` | Un comportement figé ne régresse pas (ex. bug `pathsend`) |
+| **Performance / charge** | `tests/performance/` | Débit et percentiles sous concurrence (exclus par défaut) |
+
+```bash
+python run_tests.py            # toute la suite (performance exclue)
+pytest -m unit                 # une seule categorie
+pytest -m performance          # tests de charge
+```
+
+Le **mocking** se fait via les fixtures `monkeypatch` de pytest et des doublures
+maison (`tests/helpers.py` : `FakeClient`, `FakeResponse`), plutôt que par des
+appels réseau réels.
+
+### Profilage et charge
+
+```bash
+python scripts/profile_app.py --url /login --top 20   # ou passe le temps (cProfile)
+python scripts/profile_app.py --snakeviz              # rapport visuel SnakeViz
+python scripts/load_test.py --url http://localhost:5000/login --requests 500 --concurrency 25
+```
+
+### Documentation technique (Sphinx)
+
+```bash
+pip install -r requirements-dev.txt
+sphinx-build -b html docs docs/_build/html   # -> docs/_build/html/index.html
+```
+
+La documentation est générée depuis les docstrings (autodoc + napoleon, style
+Google). Voir `docs/`.
+
+### Packaging réutilisable
+
+`pyproject.toml` déclare le paquet (`goldfx-backend`) et ses dépendances :
+`pip install -e .` depuis `backend/` rend le paquet installable et réutilisable
+dans une autre application.
+
 ---
 
-## 9. Conventions (pour humains et LLM)
+## 10. Principes de conception
+
+- **KISS** — la solution la plus simple possible ; interfaces minimales
+  (`Provider`, `UserStore`), pas de machinerie inutile.
+- **YAGNI** — pas de code pour des cas hypothétiques ni de « câbles
+  débranchés » ; on ajoute une brique quand elle sert.
+- **Moindre surprise** — un comportement attendu : `import media` ne masque pas
+  un module standard (d'où `media_tools`), `scripts/profile_app.py` n'entre pas
+  en collision avec le module standard `profile`.
+- **Compartimentalisation** — « on ne parle pas aux étrangers » : les routeurs
+  ne connaissent que les interfaces des services, jamais leurs détails
+  (`db` expose `UserStore`, `llm` expose `Provider`).
+
+---
+
+## 11. Conventions (pour humains et LLM)
+
+### Nommage (PEP 8)
+
+- `minuscules_avec_underscore` : fonctions, variables, modules, fichiers.
+- `CamelCase` : classes (`UserStore`, `KlingProvider`, `TTLCache`).
+- `MAJUSCULES` : constantes de module (`MAX_UPLOAD_MB`, `_TEXTUAL_CONTENT_TYPES`).
+- `_prefixe` : tout ce qui est privé (`_store`, `_ext`, `_send_sync`).
+- Longueur de ligne : 100 caractères (configuré dans `ruff` et `pylint`).
+
+### Structure
 
 - **Un module = une responsabilité**, nommé par ce qu'il fait (`caching`,
-  `security`, `db`, `media_tools`…).
+  `security`, `db`, `media_tools`, `llm`…).
 - **Chaque module commence par une docstring** d'une ligne décrivant son rôle ;
-  chaque fonction publique a une docstring.
-- **Routeurs** : un fichier par domaine (`auth`, `pages`, `media`, `kling`).
+  chaque fonction publique a une docstring (style Google).
+- **Routeurs** : un fichier par domaine (`auth`, `pages`, `media`, `kling`, `llm`).
 - **Services** : logique métier et I/O hors des routeurs.
 - **Configuration** : tout passe par `config.py` (jamais de valeur en dur).
-- **Tests** : un fichier `test_<module>.py` par module ; fixtures dans
-  `tests/conftest.py`, doublures dans `tests/helpers.py`.
+- **Visibilité** : déclarée dans `__all__` des paquets (`server/db`, `server/llm`).
+- **Tests** : rangés par catégorie (dossier), fixtures dans `tests/conftest.py`,
+  doublures dans `tests/helpers.py`.
+- **Documentation** : `README.md` (ce fichier) + `docs/` (Sphinx).
 - **Code et commentaires en français**, cohérents avec le reste du projet.
+
+### Ajouter une brique
+
+| Objectif | Où intervenir |
+| --- | --- |
+| Nouvelle route HTTP | `server/routers/<domaine>.py` + `create_app()` |
+| Nouvelle table | `server/db/models.py` (créée par `init_db()`) |
+| Nouveau fournisseur de modèle | `server/llm/<provider>.py` + `_BUILDERS` |
+| Nouveau type de test | dossier `tests/<categorie>/` (marqueur automatique) |

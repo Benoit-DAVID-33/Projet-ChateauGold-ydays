@@ -42,6 +42,11 @@ backend/data/jinja_cache/
 .mypy_cache/
 .ruff_cache/
 
+# Documentation generee / profilage
+backend/docs/_build/
+*.prof
+htmlcov/
+
 # Fichiers système
 .DS_Store
 Thumbs.db
