@@ -35,4 +35,6 @@ autodoc_typehints = "description"
 html_theme = "sphinx_rtd_theme"
 html_title = "GOLD FX - Documentation du backend"
 
-exclude_patterns = ["_build"]
+# Fichiers du dossier docs/ qui ne font pas partie de la documentation Sphinx
+# (documents projet deposes par l'equipe).
+exclude_patterns = ["_build", "*.pdf", "*.html"]
