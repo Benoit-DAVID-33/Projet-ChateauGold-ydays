@@ -73,6 +73,15 @@ Studio emoji
 Rendu et formulaires
 --------------------
 
+.. automodule:: server.prompting
+   :members:
+
+.. automodule:: server.routers.admin
+   :members:
+
+.. automodule:: server.routers.prompt
+   :members:
+
 .. automodule:: server.templating
    :members:
 

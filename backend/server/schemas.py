@@ -75,3 +75,11 @@ class EmojiPlanRequest(BaseModel):
     quantity: int = Field(default=1, ge=1, le=200)
     placement: Literal["random", "center"] = "random"
     seed: int | None = None
+
+
+class PromptEnhanceRequest(BaseModel):
+    """Corps de /api/prompt/enhance (prompt engineering video-to-video)."""
+
+    text: str = Field(min_length=1, max_length=1000)
+    model: Literal["kling", "luma", "decart", "generic"] = "kling"
+    use_llm: bool = False

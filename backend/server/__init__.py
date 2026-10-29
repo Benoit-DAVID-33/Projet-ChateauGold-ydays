@@ -13,6 +13,7 @@ Carte rapide du paquet ``server`` :
 - ``kling``       : client async de l'API Kling (JWT + erreurs typees).
 - ``llm``         : proxy multi-fournisseurs (routeur, quotas, providers).
 - ``emoji``       : studio emoji backend (donnees, recherche, plan de calques).
+- ``prompting``   : amelioration de prompt (prompt engineering video-to-video).
 - ``mailer``      : envoi d'emails SMTP dans un thread.
 - ``media_tools`` : helpers medias (extensions, chemins surs, FFmpeg).
 - ``templating``  : rendu Jinja2 + compatibilite Flask (url_for, flash).
@@ -35,8 +36,10 @@ from . import api_client, config, kling
 from .caching import CompressibleStaticFiles, SelectiveGZipMiddleware, StaticCacheMiddleware
 from .deps import NotAuthenticated
 from .kling import KlingError
-from .routers import auth, emoji, llm, media, pages
+from .routers import admin, auth, media, pages, prompt
+from .routers import emoji as emoji_router
 from .routers import kling as kling_router
+from .routers import llm as llm_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("goldfx")
@@ -128,7 +131,9 @@ def create_app() -> FastAPI:
     app.include_router(pages.router)
     app.include_router(media.router)
     app.include_router(kling_router.router)
-    app.include_router(llm.router)
-    app.include_router(emoji.router)
+    app.include_router(llm_router.router)
+    app.include_router(emoji_router.router)
+    app.include_router(prompt.router)
+    app.include_router(admin.router)
 
     return app

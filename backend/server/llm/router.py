@@ -80,3 +80,17 @@ class Router:
     def quota_remaining(self) -> dict[str, int | None]:
         """Requetes restantes par fournisseur (None = illimite)."""
         return {provider.name: self._quota.remaining(provider.name) for provider in self._providers}
+
+    async def describe(self) -> list[dict]:
+        """Decrit les fournisseurs : nom, capacites, joignabilite, quota restant."""
+        health = await self.health()
+        remaining = self.quota_remaining()
+        return [
+            {
+                "name": provider.name,
+                "capabilities": sorted(capability.value for capability in provider.capabilities),
+                "reachable": health.get(provider.name, False),
+                "quota_remaining": remaining.get(provider.name),
+            }
+            for provider in self._providers
+        ]

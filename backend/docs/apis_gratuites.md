@@ -18,9 +18,31 @@ C'est le point clé : **Wan 2.2 (version de base) est bien servi**, contrairemen
 | `Wan-AI/Wan2.2-I2V-A14B` | **fal-ai**, wavespeed | image-to-video | `fal-ai/wan/v2.2-a14b/image-to-video` |
 | `MiniMaxAI/MiniMax-H3` | **fal-ai**, wavespeed | image-text-to-video | `minimax/h3/image-to-video` |
 
-→ Ces modèles sont utilisables via **Hugging Face Inference Providers**, qui
-propose un **palier gratuit mensuel** (crédits) : c'est la voie gratuite la plus
-directe pour du text-to-video / image-to-video open source.
+→ Ces modèles sont utilisables via **Hugging Face Inference Providers**.
+
+### ⚠️ Ce n'est PAS gratuit par défaut
+
+Vérifié sur `huggingface.co/docs/inference-providers/pricing` (29/10/2026) :
+
+| Type de compte | Crédits mensuels inclus | Au-delà |
+| --- | --- | --- |
+| **Compte gratuit** | **aucun** | achat de crédits obligatoire (pay-as-you-go) |
+| **PRO** | 2,00 $/mois | pay-as-you-go |
+| **Organisation Team / Enterprise** | 2,00 $ **par siège** / mois | pay-as-you-go |
+
+Conséquences pour le projet :
+
+- Un **compte Hugging Face gratuit ne donne aucun crédit d'inférence** : il faut
+  acheter des crédits ou passer à PRO.
+- Être à **YNOV / dans la Hugging Face Academy ne donne pas de crédits** : la HF
+  Academy est un programme pédagogique gratuit (cours, notebooks), sans quota
+  d'API. Seule une **organisation Team/Enterprise** (si YNOV en a une) fournit
+  des crédits partagés — dans ce cas, les requêtes se facturent à l'organisation
+  avec l'en-tête `X-HF-Bill-To: <org>`.
+- **Les Spaces (dont ZeroGPU) restent gratuits à l'usage via l'interface web**,
+  mais ce n'est pas une API stable et programmatique.
+- Alternative **réellement gratuite** : un **LLM local** (Ollama / vLLM), et
+  l'auto-hébergement des modèles ouverts (GPU requis).
 
 ## 2. Modèles **sans** provider d'inférence (pas d'API publique)
 
@@ -56,13 +78,13 @@ du projet), tous accessibles via une API **compatible OpenAI** :
 
 | Fournisseur | Palier gratuit | Remarque |
 | --- | --- | --- |
-| Hugging Face Inference Providers | crédits mensuels | couvre aussi Wan 2.2 / MiniMax-H3 (vidéo) |
+| Hugging Face Inference Providers | **aucun** pour un compte gratuit (PRO 2 $/mois) | couvre Wan 2.2 / MiniMax-H3 (vidéo) |
 | Google AI Studio (Gemini) | palier gratuit | analyse vidéo possible ; édition vidéo non |
 | Groq | palier gratuit | très rapide, modèles ouverts |
 | Cerebras | palier gratuit | idem |
 | OpenRouter | modèles suffixés `:free` | agrégateur multi-modèles |
 | Mistral AI | palier gratuit | modèles Mistral |
-| **Local** (Ollama, vLLM, llama.cpp) | gratuit | API compatible OpenAI (`/v1`) |
+| **Local** (Ollama, vLLM, llama.cpp) | **gratuit, sans quota** | API compatible OpenAI (`/v1`) |
 
 ## 5. Recommandation pour ce projet
 

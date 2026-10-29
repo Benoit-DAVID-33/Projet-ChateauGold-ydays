@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console — GOLD FX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}">
+    <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+    <div class="aurora" aria-hidden="true"><span></span><span></span><span></span></div>
+
+    <header class="topbar reveal">
+        <div class="brand">
+            <span class="brand-mark">◈</span>
+            <div>
+                <strong>GOLD&nbsp;FX</strong>
+                <small>Console d'administration</small>
+            </div>
+        </div>
+        <div class="topbar-meta">
+            <span class="pill" id="versionPill">v—</span>
+            <span class="pill" id="uptimePill"><span class="dot live"></span> —</span>
+            <a class="btn ghost" href="/"><i data-lucide="arrow-left"></i> Retour au site</a>
+        </div>
+    </header>
+
+    <main class="grid">
+        <section class="kpis" id="kpis">
+            <article class="card kpi reveal" data-kpi="users">
+                <i data-lucide="users"></i><span class="kpi-value" id="kpiUsers">—</span>
+                <span class="kpi-label">Utilisateurs</span>
+            </article>
+            <article class="card kpi reveal" data-kpi="videos">
+                <i data-lucide="film"></i><span class="kpi-value" id="kpiVideos">—</span>
+                <span class="kpi-label">Vidéos</span>
+            </article>
+            <article class="card kpi reveal" data-kpi="images">
+                <i data-lucide="image"></i><span class="kpi-value" id="kpiImages">—</span>
+                <span class="kpi-label">Images</span>
+            </article>
+            <article class="card kpi reveal" data-kpi="emojis">
+                <i data-lucide="smile"></i><span class="kpi-value" id="kpiEmojis">—</span>
+                <span class="kpi-label">Emojis</span>
+            </article>
+        </section>
+
+        <section class="card reveal">
+            <header class="card-head">
+                <h2><i data-lucide="cpu"></i> Fournisseurs de modèles</h2>
+                <button class="btn ghost small" id="refreshBtn"><i data-lucide="refresh-cw"></i> Rafraîchir</button>
+            </header>
+            <div class="providers" id="providers"></div>
+        </section>
+
+        <section class="card reveal">
+            <header class="card-head"><h2><i data-lucide="settings-2"></i> Configuration</h2></header>
+            <div class="chips" id="config"></div>
+        </section>
+
+        <section class="card reveal span-2">
+            <header class="card-head">
+                <h2><i data-lucide="wand-2"></i> Studio de prompt (vidéo → vidéo)</h2>
+                <label class="switch"><input type="checkbox" id="useLlm"><span></span> Utiliser le LLM</label>
+            </header>
+            <p class="hint">Écrivez votre demande naturellement, même vaguement : elle est reformulée en prompt structuré pour le modèle.</p>
+            <div class="prompt-grid">
+                <div class="prompt-input">
+                    <textarea id="promptText" rows="4" placeholder="Ex : enlève la personne derrière et mets un ciel de nuit"></textarea>
+                    <div class="prompt-actions">
+                        <select id="promptModel">
+                            <option value="kling">Kling</option>
+                            <option value="luma">Luma</option>
+                            <option value="decart">Decart</option>
+                            <option value="generic">Générique</option>
+                        </select>
+                        <button class="btn primary" id="enhanceBtn"><i data-lucide="sparkles"></i> Améliorer</button>
+                    </div>
+                </div>
+                <div class="prompt-output" id="promptOutput">
+                    <div class="empty"><i data-lucide="sparkles"></i><span>Le prompt amélioré apparaîtra ici.</span></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="card reveal span-2">
+            <header class="card-head">
+                <h2><i data-lucide="smile-plus"></i> Studio emoji</h2>
+                <span class="pill" id="emojiCount">—</span>
+            </header>
+            <div class="emoji-toolbar">
+                <input type="search" id="emojiSearch" placeholder="Rechercher un emoji (FR ou EN)…">
+                <input type="text" id="emojiPrompt" placeholder="Composition : « 2 voitures et un avion »">
+                <button class="btn primary" id="planBtn"><i data-lucide="layers"></i> Générer le plan</button>
+            </div>
+            <div class="emoji-layout">
+                <div class="emoji-results" id="emojiResults"><div class="empty"><i data-lucide="search"></i><span>Recherchez un emoji.</span></div></div>
+                <div class="emoji-canvas-wrap">
+                    <canvas id="emojiCanvas" width="640" height="360"></canvas>
+                    <div class="layers" id="layers"><div class="empty small"><span>Aucun calque.</span></div></div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <div class="toasts" id="toasts"></div>
+    <script src="{{ url_for('static', filename='js/admin.js') }}"></script>
+</body>
+</html>

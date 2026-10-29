@@ -23,20 +23,7 @@ router = APIRouter(prefix="/api/llm", tags=["llm"], dependencies=[Depends(requir
 @router.get("/providers")
 async def list_providers():
     """Liste les fournisseurs disponibles, leur etat et leur quota restant."""
-    llm = get_router()
-    health = await llm.health()
-    remaining = llm.quota_remaining()
-    return {
-        "providers": [
-            {
-                "name": provider.name,
-                "capabilities": sorted(capability.value for capability in provider.capabilities),
-                "reachable": health.get(provider.name, False),
-                "quota_remaining": remaining.get(provider.name),
-            }
-            for provider in llm.providers
-        ]
-    }
+    return {"providers": await get_router().describe()}
 
 
 @router.post("/generate")

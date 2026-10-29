@@ -64,6 +64,7 @@ backend/
 │   │   ├── search.py       # Normalisation, alias FR/EN, classement
 │   │   ├── prompt.py       # Analyse d'une composition (« 2 voitures et un avion »)
 │   │   └── layout.py       # Plan de calques deterministe (positions)
+│   ├── prompting.py        # Amelioration de prompt (video-to-video)
 │   ├── deps.py             # Dependances d'auth (401 / redirection login)
 │   ├── schemas.py          # Modeles Pydantic (validation des corps JSON)
 │   ├── forms.py            # Lecture typee des champs de formulaire
@@ -78,7 +79,9 @@ backend/
 │       ├── media.py        # upload, service, suppression, proxy
 │       ├── kling.py        # Proxy Kling AI (/kling/*)
 │       ├── llm.py          # Proxy multi-fournisseurs (/api/llm/*)
-│       └── emoji.py        # Studio emoji (/api/emoji/*)
+│       ├── emoji.py        # Studio emoji (/api/emoji/*)
+│       ├── prompt.py       # Prompt engineering (/api/prompt/*)
+│       └── admin.py        # Console d'administration (/admin, /api/admin/*)
 ├── tests/                  # Suite pytest, rangee par categorie
 │   ├── unit/               # Tests unitaires (dependances mockees)
 │   ├── integration/        # Tests d'integration (composants ensemble)
@@ -219,7 +222,7 @@ Hugging Face Inference Providers (fal/replicate/wavespeed) → voir
 
 ---
 
-## 6. Studio emoji (backend)
+## 6. Emoji, console d'administration et prompt engineering
 
 Le studio emoji du projet (`docs/emoji-studio.html`) est un outil **client-side**.
 Le backend en réimplémente la logique pour la rendre réutilisable via une API,
@@ -239,6 +242,44 @@ canvas.
 - **Déterminisme** : `seed` fixe ⇒ même plan (PRNG mulberry32 identique au studio).
 - **Variables** : `EMOJI_DATA_URLS`, `EMOJI_DATA_FILE`, `EMOJI_CACHE_TTL`,
   `EMOJI_MAX_RESULTS`.
+
+### Console d'administration (`/admin`)
+
+Page autonome (`frontend/templates/admin.html` + `static/css/admin.css` +
+`static/js/admin.js`) : thème sombre, accents dorés, **motion design** (aurore
+animée, apparitions en cascade, compteurs animés, pastilles d'état pulsées,
+barres de quota), `prefers-reduced-motion` respecté.
+
+Elle affiche : version, disponibilité, KPI (utilisateurs, vidéos, images,
+emojis), fournisseurs de modèles (capacités, joignabilité, quota), configuration
+(non sensible), le studio de prompt et le studio emoji (recherche dans **tous**
+les emojis, plan de calques et aperçu canvas).
+
+| Route | Rôle |
+| --- | --- |
+| `GET /admin` | Page de la console (auth requise) |
+| `GET /api/admin/overview` | État complet en une requête (auth requise) |
+
+### Prompt engineering (`/api/prompt/enhance`)
+
+Transforme une demande **naturelle et parfois vague** en prompt structuré pour
+un modèle vidéo→vidéo.
+
+- **Mode règles** (toujours disponible, hors ligne) : détection de l'intention
+  (ajouter / retirer / remplacer / recolorer / restyler / fond / météo / angle /
+  plan suivant ou précédent), extraction du sujet et de la cible, puis
+  application des **structures documentées par les fournisseurs** (Kling O1,
+  Luma Ray 3.2, Decart).
+- **Détection multi-intention** : « enlève la personne **et** mets un ciel de
+  nuit » → un seul prompt propre (`Supprime la personne derrière.`) + conseil de
+  séparer les modifications (les modèles préfèrent une modification par prompt).
+- **Clause « conserver »** ajoutée systématiquement : en vidéo→vidéo, dire ce qui
+  ne doit **pas** changer est aussi important que le reste.
+- **Mode LLM** : si un fournisseur texte est configuré, le prompt est réécrit par
+  le modèle (repli automatique sur les règles).
+
+> Méthode recommandée : LLM pour la reformulation + règles pour garantir la
+> structure et le repli hors ligne. Voir aussi `docs/apis_gratuites.md`.
 
 ---
 
@@ -377,7 +418,7 @@ python run_tests.py            # ou : pytest
 | `mypy` | 0 erreur |
 | `pylint` | **10.00 / 10** |
 | `bandit` | 3 alertes **Low** — justifiées : `import subprocess` + appel FFmpeg sans `shell`, chemin résolu via `shutil.which`, arguments fixes (pas d'injection) |
-| `pytest` | **168 tests** (+ 1 test de charge), couverture **85 %** |
+| `pytest` | **190 tests** (+ 1 test de charge), couverture **85 %** |
 
 Trois exceptions de configuration sont documentées et justifiées dans
 `pyproject.toml` :

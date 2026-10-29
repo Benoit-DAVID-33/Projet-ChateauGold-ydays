@@ -31,6 +31,8 @@ Modules du paquet ``server``
      - Proxy multi-fournisseurs (routeur, quotas, providers)
    * - ``emoji``
      - Studio emoji backend (donnees, recherche, plan de calques)
+   * - ``prompting``
+     - Amelioration de prompt (prompt engineering video-to-video)
    * - ``mailer``
      - Envoi d'emails SMTP dans un thread
    * - ``media_tools``
