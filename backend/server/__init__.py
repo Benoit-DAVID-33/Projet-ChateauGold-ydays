@@ -11,6 +11,8 @@ Carte rapide du paquet ``server`` :
 - ``forms``       : lecture typee des champs de formulaire.
 - ``http``        : fabrique de clients HTTP asynchrones partages.
 - ``kling``       : client async de l'API Kling (JWT + erreurs typees).
+- ``llm``         : proxy multi-fournisseurs (routeur, quotas, providers).
+- ``emoji``       : studio emoji backend (donnees, recherche, plan de calques).
 - ``mailer``      : envoi d'emails SMTP dans un thread.
 - ``media_tools`` : helpers medias (extensions, chemins surs, FFmpeg).
 - ``templating``  : rendu Jinja2 + compatibilite Flask (url_for, flash).
@@ -33,7 +35,7 @@ from . import api_client, config, kling
 from .caching import CompressibleStaticFiles, SelectiveGZipMiddleware, StaticCacheMiddleware
 from .deps import NotAuthenticated
 from .kling import KlingError
-from .routers import auth, llm, media, pages
+from .routers import auth, emoji, llm, media, pages
 from .routers import kling as kling_router
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
@@ -127,5 +129,6 @@ def create_app() -> FastAPI:
     app.include_router(media.router)
     app.include_router(kling_router.router)
     app.include_router(llm.router)
+    app.include_router(emoji.router)
 
     return app

@@ -60,3 +60,18 @@ class LLMGenerateRequest(BaseModel):
     capability: Literal["text", "image", "video"] = "text"
     prompt: str = Field(min_length=1, max_length=4000)
     options: dict = Field(default_factory=dict)
+
+
+class EmojiPlanRequest(BaseModel):
+    """Corps de /api/emoji/plan (studio emoji)."""
+
+    prompt: str = Field(default="", max_length=500)
+    emojis: list[str] = Field(default_factory=list, max_length=50)
+    width: int = Field(default=960, ge=1, le=8192)
+    height: int = Field(default=540, ge=1, le=8192)
+    size: int = Field(default=112, ge=8, le=1200)
+    rotation: int = Field(default=0, ge=-360, le=360)
+    opacity: int = Field(default=100, ge=1, le=100)
+    quantity: int = Field(default=1, ge=1, le=200)
+    placement: Literal["random", "center"] = "random"
+    seed: int | None = None

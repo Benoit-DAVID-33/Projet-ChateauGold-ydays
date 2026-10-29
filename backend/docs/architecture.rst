@@ -29,6 +29,8 @@ Modules du paquet ``server``
      - Client async de l'API Kling (JWT, erreurs typees)
    * - ``llm``
      - Proxy multi-fournisseurs (routeur, quotas, providers)
+   * - ``emoji``
+     - Studio emoji backend (donnees, recherche, plan de calques)
    * - ``mailer``
      - Envoi d'emails SMTP dans un thread
    * - ``media_tools``

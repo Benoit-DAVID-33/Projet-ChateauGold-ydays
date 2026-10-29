@@ -3,6 +3,11 @@
 Les fournisseurs disponibles sont declares dans ``_BUILDERS``. En ajouter un
 nouveau revient a ecrire une classe ``Provider`` puis a l'enregistrer ici, et a
 l'activer via ``LLM_PROVIDER_PRIORITY`` dans le ``.env``.
+
+Fournisseurs fournis : ``kling`` (image/video), ``huggingface``, ``local`` et
+``minimax`` (texte, API compatible OpenAI). Les modeles video ouverts verifies
+(Wan 2.2, MiniMax-H3) sont accessibles via Hugging Face Inference Providers :
+voir ``docs/apis_gratuites.md``.
 """
 
 import logging
@@ -31,6 +36,13 @@ _BUILDERS = {
         base_url=config.LOCAL_LLM_BASE_URL,
         model=config.LOCAL_LLM_MODEL,
         api_key=config.LOCAL_LLM_API_KEY,
+        timeout=config.LLM_TIMEOUT_SECONDS,
+    ),
+    "minimax": lambda: OpenAICompatibleProvider(
+        name="minimax",
+        base_url=config.MINIMAX_API_BASE_URL,
+        model=config.MINIMAX_MODEL,
+        api_key=config.MINIMAX_API_KEY,
         timeout=config.LLM_TIMEOUT_SECONDS,
     ),
 }

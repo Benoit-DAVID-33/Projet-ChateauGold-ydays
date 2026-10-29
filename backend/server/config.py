@@ -112,7 +112,7 @@ def _env_quotas(name: str) -> dict[str, int]:
 
 # --- Routage multi-fournisseurs (proxy LLM / generation) ---
 # Ordre de priorite des fournisseurs ; le routeur choisit le premier eligible.
-LLM_PROVIDER_PRIORITY = _env_list("LLM_PROVIDER_PRIORITY", "kling,huggingface,local")
+LLM_PROVIDER_PRIORITY = _env_list("LLM_PROVIDER_PRIORITY", "kling,huggingface,local,minimax")
 # Quotas quotidiens par fournisseur (vide = illimite). Ex : "kling=100,huggingface=1000".
 LLM_QUOTAS = _env_quotas("LLM_QUOTAS")
 LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "60"))
@@ -126,6 +126,27 @@ HF_MODEL = os.environ.get("HF_MODEL", "MiniMaxAI/MiniMax-M2")
 LOCAL_LLM_BASE_URL = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1").rstrip("/")
 LOCAL_LLM_MODEL = os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
 LOCAL_LLM_API_KEY = os.environ.get("LOCAL_LLM_API_KEY", "local")
+
+# MiniMax (API compatible OpenAI pour le texte). La generation video MiniMax
+# (H3) utilise un endpoint dedie non implemente ici : voir docs/apis_gratuites.md.
+MINIMAX_API_BASE_URL = os.environ.get("MINIMAX_API_BASE_URL", "https://api.minimax.io/v1").rstrip(
+    "/"
+)
+MINIMAX_MODEL = os.environ.get("MINIMAX_MODEL", "MiniMax-Text-01")
+MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
+
+# --- Emoji (studio backend) ---
+# URLs essayees dans l'ordre ({lang} = en/fr). Le fichier local, s'il est defini,
+# court-circuite le reseau.
+EMOJI_DATA_URLS = _env_list(
+    "EMOJI_DATA_URLS",
+    "https://cdn.jsdelivr.net/npm/emojibase-data@latest/{lang}/data.json,"
+    "https://cdn.jsdelivr.net/npm/emojibase-data/{lang}/compact.json,"
+    "https://unpkg.com/emojibase-data@latest/{lang}/compact.json",
+)
+EMOJI_DATA_FILE = os.environ.get("EMOJI_DATA_FILE", "")
+EMOJI_CACHE_TTL = float(os.environ.get("EMOJI_CACHE_TTL", str(60 * 60 * 24)))
+EMOJI_MAX_RESULTS = int(os.environ.get("EMOJI_MAX_RESULTS", "120"))
 
 # --- Medias ---
 ALLOWED_VIDEO_EXTENSIONS = {"mp4", "avi", "mov", "mkv", "webm"}

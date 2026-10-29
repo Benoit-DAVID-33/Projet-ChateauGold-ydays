@@ -59,6 +59,11 @@ backend/
 │   │   ├── kling_provider.py    # Fournisseur Kling AI
 │   │   ├── openai_provider.py   # API compatible OpenAI (HF, MiniMax, local)
 │   │   └── registry.py     # Construction depuis la configuration
+│   ├── emoji/              # Studio emoji backend (donnees + plan de calques)
+│   │   ├── dataset.py      # Jeu emojibase FR/EN (CDN ou fichier), cache
+│   │   ├── search.py       # Normalisation, alias FR/EN, classement
+│   │   ├── prompt.py       # Analyse d'une composition (« 2 voitures et un avion »)
+│   │   └── layout.py       # Plan de calques deterministe (positions)
 │   ├── deps.py             # Dependances d'auth (401 / redirection login)
 │   ├── schemas.py          # Modeles Pydantic (validation des corps JSON)
 │   ├── forms.py            # Lecture typee des champs de formulaire
@@ -72,7 +77,8 @@ backend/
 │       ├── pages.py        # Pages HTML
 │       ├── media.py        # upload, service, suppression, proxy
 │       ├── kling.py        # Proxy Kling AI (/kling/*)
-│       └── llm.py          # Proxy multi-fournisseurs (/api/llm/*)
+│       ├── llm.py          # Proxy multi-fournisseurs (/api/llm/*)
+│       └── emoji.py        # Studio emoji (/api/emoji/*)
 ├── tests/                  # Suite pytest, rangee par categorie
 │   ├── unit/               # Tests unitaires (dependances mockees)
 │   ├── integration/        # Tests d'integration (composants ensemble)
@@ -191,24 +197,52 @@ MiniMax, vLLM, Ollama… Changer de service = changer trois variables d'env.
 
 | Variable | Rôle |
 | --- | --- |
-| `LLM_PROVIDER_PRIORITY` | Ordre des fournisseurs (ex. `kling,huggingface,local`) |
+| `LLM_PROVIDER_PRIORITY` | Ordre des fournisseurs (ex. `kling,huggingface,local,minimax`) |
 | `LLM_QUOTAS` | Quotas quotidiens (ex. `kling=100,huggingface=1000`) |
 | `HF_API_BASE_URL`, `HF_API_TOKEN`, `HF_MODEL` | Hugging Face / MiniMax |
 | `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_API_KEY` | LLM local |
+| `MINIMAX_API_BASE_URL`, `MINIMAX_MODEL`, `MINIMAX_API_KEY` | MiniMax (texte) |
 
 Routes (authentification requise) : `GET /api/llm/providers`,
 `POST /api/llm/generate`, `GET /api/llm/status/{task_id}`.
+
+**Modèles vidéo ouverts gratuits** : Wan 2.2 et MiniMax-H3 sont servis par
+Hugging Face Inference Providers (fal/replicate/wavespeed) → voir
+`docs/apis_gratuites.md` pour la matrice vérifiée et les quotas.
 
 **Ajouter un fournisseur** : écrire une classe héritant de `Provider`
 (`server/llm/base.py`), l'enregistrer dans `_BUILDERS`
 (`server/llm/registry.py`), puis l'activer via `LLM_PROVIDER_PRIORITY`.
 
-> État : **conception + socle fonctionnel** (routeur, quotas, 2 fournisseurs,
+> État : **conception + socle fonctionnel** (routeur, quotas, fournisseurs,
 > tests). Non branché sur l'interface : l'existant n'est pas impacté.
 
 ---
 
-## 6. Base de données (SQLAlchemy, plug-and-play)
+## 6. Studio emoji (backend)
+
+Le studio emoji du projet (`docs/emoji-studio.html`) est un outil **client-side**.
+Le backend en réimplémente la logique pour la rendre réutilisable via une API,
+sans rendu image côté serveur : `POST /api/emoji/plan` renvoie un **plan de
+calques JSON** (positions, tailles, rotations) que le navigateur dessine sur
+canvas.
+
+| Route | Rôle |
+| --- | --- |
+| `GET /api/emoji/search?q=&limit=` | Recherche bilingue (labels + tags + alias FR/EN) |
+| `POST /api/emoji/plan` | Analyse une composition (« 2 voitures et un avion ») → plan |
+| `GET /api/emoji/dataset` | Page du jeu emojibase (métadonnées) |
+
+- **Données** : emojibase FR/EN via CDN, mises en cache (TTL long) ; un fichier
+  local (`EMOJI_DATA_FILE`) court-circuite le réseau. Chargées **à la demande**
+  (jamais au démarrage).
+- **Déterminisme** : `seed` fixe ⇒ même plan (PRNG mulberry32 identique au studio).
+- **Variables** : `EMOJI_DATA_URLS`, `EMOJI_DATA_FILE`, `EMOJI_CACHE_TTL`,
+  `EMOJI_MAX_RESULTS`.
+
+---
+
+## 7. Base de données (SQLAlchemy, plug-and-play)
 
 La base est **optionnelle et branchable** : le reste du code ne dépend jamais de
 son implémentation, seulement du contrat `UserStore`.
@@ -255,7 +289,7 @@ def exemple(session: Session = Depends(get_session)):
 
 ---
 
-## 7. Comparatif avant / après
+## 8. Comparatif avant / après
 
 ### Performance (mesures réelles)
 
@@ -324,7 +358,7 @@ localhost, ces valeurs sont **indicatives**.
 
 ---
 
-## 8. Porte qualité
+## 9. Porte qualité
 
 ```bash
 cd backend
@@ -343,7 +377,7 @@ python run_tests.py            # ou : pytest
 | `mypy` | 0 erreur |
 | `pylint` | **10.00 / 10** |
 | `bandit` | 3 alertes **Low** — justifiées : `import subprocess` + appel FFmpeg sans `shell`, chemin résolu via `shutil.which`, arguments fixes (pas d'injection) |
-| `pytest` | **128 tests** (+ 1 test de charge), couverture **85 %** |
+| `pytest` | **168 tests** (+ 1 test de charge), couverture **85 %** |
 
 Trois exceptions de configuration sont documentées et justifiées dans
 `pyproject.toml` :
@@ -356,7 +390,7 @@ Trois exceptions de configuration sont documentées et justifiées dans
 
 ---
 
-## 9. Tests, qualité et outillage
+## 10. Tests, qualité et outillage
 
 ### Lancer l'application
 
@@ -408,7 +442,12 @@ sphinx-build -b html docs docs/_build/html   # -> docs/_build/html/index.html
 ```
 
 La documentation est générée depuis les docstrings (autodoc + napoleon, style
-Google). Voir `docs/`.
+Google). Voir `docs/`. Documents complémentaires :
+
+- `docs/veille_verification.md` — vérification de la veille vidéo→vidéo face aux
+  sources officielles (statut par affirmation).
+- `docs/apis_gratuites.md` — providers d'inférence et quotas gratuits vérifiés
+  (Wan 2.2, MiniMax-H3, LLM texte).
 
 ### Packaging réutilisable
 
@@ -418,7 +457,7 @@ dans une autre application.
 
 ---
 
-## 10. Principes de conception
+## 11. Principes de conception
 
 - **KISS** — la solution la plus simple possible ; interfaces minimales
   (`Provider`, `UserStore`), pas de machinerie inutile.
@@ -433,7 +472,7 @@ dans une autre application.
 
 ---
 
-## 11. Conventions (pour humains et LLM)
+## 12. Conventions (pour humains et LLM)
 
 ### Nommage (PEP 8)
 

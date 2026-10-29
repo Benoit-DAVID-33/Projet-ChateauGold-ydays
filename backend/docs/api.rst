@@ -52,6 +52,24 @@ Proxy multi-fournisseurs
 .. automodule:: server.llm.router
    :members:
 
+Studio emoji
+------------
+
+.. automodule:: server.emoji
+   :members:
+
+.. automodule:: server.emoji.dataset
+   :members:
+
+.. automodule:: server.emoji.search
+   :members:
+
+.. automodule:: server.emoji.prompt
+   :members:
+
+.. automodule:: server.emoji.layout
+   :members:
+
 Rendu et formulaires
 --------------------
 
