@@ -8,11 +8,15 @@ Les templates existants utilisent des idiomes Flask :
 On fournit un shim ``url_for`` et un systeme de messages flashes adosses a la
 session signee, afin de reutiliser les templates sans les modifier.
 
+Cache : les URL des fichiers statiques portent une empreinte (``?v=...``), ce
+qui permet un cache navigateur d'un an sans jamais servir une version perimee.
+
 Performance : le rendu renvoie un ``ETag`` et ``Cache-Control: private, no-cache``
 pour que le navigateur revalide les pages (304) au lieu de les recharger.
 """
 
 import hashlib
+from functools import lru_cache
 
 from fastapi.responses import Response
 from fastapi.templating import Jinja2Templates
@@ -44,8 +48,29 @@ def get_flashed_messages(request: Request, with_categories: bool = False, catego
     return [message for _, message in messages]
 
 
+@lru_cache(maxsize=512)
+def _fingerprint(relative: str, mtime_ns: int, size: int) -> str:
+    """Empreinte courte d'un fichier statique (change des que le fichier change)."""
+    return hashlib.sha256(f"{relative}:{mtime_ns}:{size}".encode()).hexdigest()[:10]
+
+
+def static_version(relative: str) -> str:
+    """Version d'un fichier statique, ou "" s'il n'existe pas.
+
+    Les fichiers statiques sont servis avec un cache navigateur d'un an : sans
+    ce numero de version dans l'URL, un visiteur garderait l'ancien CSS/JS
+    apres une mise a jour du site.
+    """
+    path = (config.STATIC_DIR / relative).resolve()
+    try:
+        stat = path.stat()
+    except OSError:
+        return ""
+    return _fingerprint(relative, stat.st_mtime_ns, stat.st_size)
+
+
 def _flask_url_for(request: Request):
-    """url_for compatible Flask, retournant un chemin relatif."""
+    """url_for compatible Flask, retournant un chemin relatif (versionne pour les statiques)."""
 
     def url_for(name: str, **params):
         if name == "static" and "filename" in params:
@@ -54,6 +79,8 @@ def _flask_url_for(request: Request):
         path = url.path
         if url.query:
             path = f"{path}?{url.query}"
+        if name == "static" and (version := static_version(params["path"])):
+            path = f"{path}{'&' if '?' in path else '?'}v={version}"
         return path
 
     return url_for

@@ -56,8 +56,8 @@ def _free() -> Plan:
         max_job_cost_usd=config.PLAN_FREE_MAX_JOB_COST_USD,
         queue_priority=10,
         features=(
-            "Assistant de prompt cinéma illimité",
-            "Plan de montage et estimation de coût illimités (sans génération)",
+            "Assistant de montage illimité (vocabulaire de tournage)",
+            "Récapitulatif avant lancement, sans limite",
             f"{daily} génération(s) vidéo par jour",
             "Qualité Rapide et HD (jusqu'à 720p)",
             "2 modifications par vidéo, vidéo de 30 s max",

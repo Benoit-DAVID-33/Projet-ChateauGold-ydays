@@ -50,3 +50,14 @@ def test_static_file_is_served_intact(client):
     response = client.get("/static/css/style.css")
     assert response.status_code == 200
     assert len(response.content) > 1000
+
+
+def test_static_urls_are_fingerprinted(client):
+    """Les URL statiques portent une empreinte : un cache d'un an reste sans risque."""
+    from server.core.templating import static_version
+
+    html = client.get("/login").text
+    version = static_version("css/style.css")
+    assert version
+    assert f"/static/css/style.css?v={version}" in html
+    assert static_version("css/inexistant.css") == ""

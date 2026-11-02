@@ -93,3 +93,12 @@ def test_triage_reports_cinema_terms():
         "wide shot",
         "backlight, rim light",
     }
+
+
+def test_leading_time_with_comma_stays_with_its_action():
+    result = triage.analyze("À 5 s, mettre la scène de nuit")
+    assert len(result.edits) == 1
+    assert result.edits[0].timing == {"start": 5.0}
+    assert result.edits[0].intent == "weather"
+    both = triage.analyze("à 2 s, ajoute un chevalier, puis à 15 s, ajoute un dragon")
+    assert [edit.timing for edit in both.edits] == [{"start": 2.0}, {"start": 15.0}]

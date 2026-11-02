@@ -17,10 +17,13 @@ router = APIRouter(tags=["pages"])
 @router.get("/", name="index")
 async def index(request: Request):
     """Page d'accueil publique (vitrine) : visible sans compte, comme /offres."""
+    from server.api.plans import plan_cards
+
     return render(
         request,
         "home.html",
         title="Accueil",
+        plans=plan_cards(),
         video=request.query_params.get("video"),
         image=request.query_params.get("image"),
         processed_video=request.query_params.get("processed"),

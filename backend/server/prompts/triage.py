@@ -159,7 +159,21 @@ def split_edits(text: str) -> list[str]:
             clauses.append(text[start : match.start()])
             start = match.end()
     clauses.append(text[start:])
-    return [clean(clause) for clause in clauses if clean(clause)]
+    # « À 5 s, mets la nuit » : un passage qui n'est qu'un moment est rattache a
+    # l'action qui le suit (sinon on obtiendrait un moment sans action).
+    merged: list[str] = []
+    pending = ""
+    for clause in (clean(c) for c in clauses):
+        if not clause:
+            continue
+        if not timecodes.extract(clause)[1]:
+            pending = f"{pending} {clause}".strip()
+            continue
+        merged.append(f"{pending} {clause}".strip() if pending else clause)
+        pending = ""
+    if pending:
+        merged.append(pending)
+    return merged
 
 
 # --- Extraction des parties (sujet / cible) -----------------------------------
@@ -302,14 +316,14 @@ def _questions(edit: TriagedEdit) -> list[str]:
     if edit.intent == DEFAULT_INTENT:
         asks.append(
             f"« {edit.instruction} » : voulez-vous ajouter, retirer, remplacer ou "
-            "restyler quelque chose ?"
+            "changer le style de quelque chose ?"
         )
     elif edit.intent == "remove" and edit.subject.lower() in _VAGUE_TARGETS:
         asks.append("Que faut-il retirer exactement (objet, personne, position à l'écran) ?")
     elif edit.intent in {"add", "replace"} and len(edit.target.split()) < 3:
         asks.append(
             f"Pouvez-vous décrire « {edit.target or edit.instruction} » (taille, couleur, "
-            "matière, position, action) ? Un prompt précis donne un meilleur rendu."
+            "matière, position, action) ? Une description précise donne un meilleur rendu."
         )
     return asks
 
