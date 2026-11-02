@@ -191,6 +191,17 @@ DECART_API_KEY = os.environ.get("DECART_API_KEY", "")
 DECART_API_BASE_URL = os.environ.get("DECART_API_BASE_URL", "https://api.decart.ai").rstrip("/")
 LUMA_API_KEY = os.environ.get("LUMA_API_KEY", "")
 LUMA_API_BASE_URL = os.environ.get("LUMA_API_BASE_URL", "https://agents.lumalabs.ai").rstrip("/")
+# Demonstration GRATUITE via un Space Hugging Face (ZeroGPU), appele SANS jeton :
+# aucun compte n'est utilise ni debite. Quota anonyme ~2 min de GPU par jour pour
+# l'adresse IP du serveur (partage entre tous les visiteurs) ; Space non garanti.
+HF_SPACE_ENABLED = _env_bool("HF_SPACE_ENABLED", True)
+HF_SPACE_ID = os.environ.get("HF_SPACE_ID", "hugging-apps/jdopensource-joyai-video-edit")
+HF_SPACE_ENDPOINT_PREFIX = os.environ.get("HF_SPACE_ENDPOINT_PREFIX", "/edit_video")
+HF_SPACE_DAILY_GPU_SECONDS = float(os.environ.get("HF_SPACE_DAILY_GPU_SECONDS", "110"))
+HF_SPACE_TIMEOUT_SECONDS = float(os.environ.get("HF_SPACE_TIMEOUT_SECONDS", "600"))
+HF_SPACE_BUDGET_FILE = Path(
+    os.environ.get("HF_SPACE_BUDGET_FILE") or DATA_DIR / "hf_space_budget.json"
+)
 # Dossier de travail des montages (segments, resultats intermediaires, etat des travaux).
 VIDEO_JOBS_DIR = Path(os.environ.get("VIDEO_JOBS_DIR") or DATA_DIR / "edit_jobs")
 VIDEO_MAX_CONCURRENT_JOBS = int(os.environ.get("VIDEO_MAX_CONCURRENT_JOBS", "2"))
@@ -203,6 +214,9 @@ VIDEO_EDITING_SIMULATE = _env_bool("VIDEO_EDITING_SIMULATE", False)
 # --- Offres (server/accounts/plans.py) ---
 PLAN_FREE_DAILY_GENERATIONS = int(os.environ.get("PLAN_FREE_DAILY_GENERATIONS", "2"))
 PLAN_FREE_MAX_JOB_COST_USD = float(os.environ.get("PLAN_FREE_MAX_JOB_COST_USD", "1.5"))
+# true : l'offre gratuite n'utilise QUE les modeles gratuits (Space HF), rien n'est
+# facture a l'exploitant ; false : elle peut aussi utiliser les cles payantes.
+PLAN_FREE_ONLY_FREE_MODELS = _env_bool("PLAN_FREE_ONLY_FREE_MODELS", True)
 PLAN_STUDIO_DAILY_GENERATIONS = int(os.environ.get("PLAN_STUDIO_DAILY_GENERATIONS", "30"))
 PLAN_STUDIO_MAX_JOB_COST_USD = float(os.environ.get("PLAN_STUDIO_MAX_JOB_COST_USD", "25"))
 PLAN_STUDIO_PRICE_LABEL = os.environ.get("PLAN_STUDIO_PRICE_LABEL", "Sur demande")

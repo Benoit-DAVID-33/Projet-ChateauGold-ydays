@@ -165,6 +165,13 @@ Intégrations (kling_api, providers/*, ffmpeg) — clients HTTP partagés, flux 
 les générations non envoyées sont rendues en cas d'échec ou d'annulation.
 `VIDEO_EDITING_SIMULATE=true` exécute toute la chaîne sans IA ni coût (démo).
 
+### Démonstration gratuite (Space Hugging Face)
+
+L'offre Découverte passe par le Space **JoyAI Video Edit** (Apache-2.0), appelé **sans
+jeton** : aucun compte Hugging Face utilisé ni débité. Quota GPU anonyme suivi localement
+(`HF_SPACE_DAILY_GPU_SECONDS`), passages de 4 s maximum, sortie complétée à la durée exacte.
+Détails et mesures : `docs/apis_gratuites.md` (section 6).
+
 ### Offres (`server/accounts`)
 
 | | Découverte (gratuite) | Studio |

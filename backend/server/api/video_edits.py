@@ -31,8 +31,14 @@ from server import config
 from server.api.schemas import VideoEditRequest
 from server.core.auth_deps import require_admin, require_user
 from server.video_editing import catalog
-from server.video_editing.routing import provider_status
-from server.video_editing.service import EditingError, EditingRequest, EditInput, get_service
+from server.video_editing.routing import plan_status, provider_status
+from server.video_editing.service import (
+    EditingError,
+    EditingRequest,
+    EditInput,
+    free_models_only,
+    get_service,
+)
 
 router = APIRouter(prefix="/api/video-edits", tags=["video-edits"])
 
@@ -121,9 +127,18 @@ async def options(request: Request, username: str = Depends(require_user)):
     """Qualites proposees (sans nom de modele) et limites de l'offre de l'utilisateur."""
     service = get_service()
     snapshot = await run_in_threadpool(service.usage.snapshot, username)
-    available = {m.key for m in catalog.integrated_models() if provider_status(m) is None}
+    status = plan_status(free_models_only(snapshot.plan))
+    available = {m.key for m in catalog.integrated_models() if status(m) is None}
+    usable_anywhere = {m.key for m in catalog.integrated_models() if provider_status(m) is None}
+    qualities = catalog.public_quality_options(snapshot.plan.qualities, available)
+    for quality in qualities:
+        # Reservee aux modeles payants : on l'annonce comme une qualite de l'offre Studio.
+        if quality["included"] and not quality["available"]:
+            studio = catalog.public_quality_options((quality["key"],), usable_anywhere)
+            if any(q["key"] == quality["key"] and q["available"] for q in studio):
+                quality["included"] = False
     payload = {
-        "qualities": catalog.public_quality_options(snapshot.plan.qualities, available),
+        "qualities": qualities,
         "usage": snapshot.as_dict(),
     }
     return _etag_json(request, payload, max_age=0)

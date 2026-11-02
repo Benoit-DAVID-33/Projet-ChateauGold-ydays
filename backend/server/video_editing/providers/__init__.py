@@ -12,6 +12,7 @@ from server.video_editing.providers.base import (
 )
 from server.video_editing.providers.decart import DecartEditProvider
 from server.video_editing.providers.fal import FalEditProvider
+from server.video_editing.providers.hf_space import HfSpaceEditProvider
 from server.video_editing.providers.kling import KlingEditProvider
 from server.video_editing.providers.luma import LumaEditProvider
 
@@ -20,6 +21,7 @@ _PROVIDERS: dict[str, EditProvider] = {
     "fal": FalEditProvider(),
     "decart": DecartEditProvider(),
     "luma": LumaEditProvider(),
+    "hf_space": HfSpaceEditProvider(),
 }
 
 

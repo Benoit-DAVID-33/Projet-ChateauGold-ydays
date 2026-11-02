@@ -59,8 +59,17 @@ def _free() -> Plan:
             "Assistant de montage illimité (vocabulaire de tournage)",
             "Récapitulatif avant lancement, sans limite",
             f"{daily} génération(s) vidéo par jour",
-            "Qualité Rapide et HD (jusqu'à 720p)",
+            (
+                "Qualité HD (720p)"
+                if config.PLAN_FREE_ONLY_FREE_MODELS
+                else "Qualité Rapide et HD (jusqu'à 720p)"
+            ),
             "2 modifications par vidéo, vidéo de 30 s max",
+            *(
+                ("Rendu par un modèle open source gratuit, par passages de 4 s",)
+                if config.PLAN_FREE_ONLY_FREE_MODELS
+                else ()
+            ),
         ),
     )
 

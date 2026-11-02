@@ -67,8 +67,11 @@ def isolated_video_editing(tmp_path, monkeypatch):
     engine = create_engine(f"sqlite:///{(tmp_path / 'plans.db').as_posix()}")
     Base.metadata.create_all(engine)
     store = usage.UsageStore(sessionmaker(bind=engine))
+    from server.video_editing.providers import hf_space
+
     monkeypatch.setattr(config, "VIDEO_JOBS_DIR", tmp_path / "edit_jobs")
     monkeypatch.setattr(usage, "_store", store)
+    monkeypatch.setattr(hf_space, "_budget", hf_space.SpaceBudget(tmp_path / "space_budget.json"))
     monkeypatch.setattr(service, "_service", None)
     yield store
     engine.dispose()

@@ -33,12 +33,25 @@ from server.video_editing.catalog import (
 )
 
 
+def _space_status(model: VideoModel) -> str | None:
+    """Demonstration gratuite : activee et quota anonyme du jour suffisant ?"""
+    from server.video_editing.providers.hf_space import estimate_gpu_seconds, get_budget
+
+    if not config.HF_SPACE_ENABLED:
+        return "démonstration gratuite désactivée (HF_SPACE_ENABLED)"
+    if get_budget().remaining() < estimate_gpu_seconds(model.min_seconds):
+        return "quota gratuit du jour épuisé"
+    return None
+
+
 def provider_status(model: VideoModel) -> str | None:
     """Raison pour laquelle le modele est inutilisable ici, ou None s'il est pret."""
     if not model.integrated:
         return "non intégré dans ce backend"
     if config.VIDEO_EDITING_SIMULATE:
         return None
+    if model.provider == "hf_space":
+        return _space_status(model)
     missing = {
         "kling": not (config.KLING_ACCESS_KEY and config.KLING_SECRET_KEY),
         "fal": not config.FAL_API_KEY,
@@ -166,6 +179,17 @@ def _score(model: VideoModel, request: RouteRequest) -> tuple[float, list[str], 
         score -= 2 * cost
         reasons.append(f"coût estimé {cost:.2f} $ ({tier.price_evidence})")
     return score, reasons, None
+
+
+def plan_status(free_only: bool) -> Callable[[VideoModel], str | None]:
+    """Disponibilite pour une offre : l'offre gratuite peut etre limitee aux modeles gratuits."""
+
+    def status(model: VideoModel) -> str | None:
+        if free_only and not model.free:
+            return "réservé à l'offre Studio"
+        return provider_status(model)
+
+    return status
 
 
 def choose_model(

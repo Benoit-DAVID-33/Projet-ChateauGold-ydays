@@ -137,3 +137,36 @@ HF_FORBIDDEN_ACCOUNTS=<votre-compte-hf-personnel>
 Les modèles vidéo ouverts (Wan, MiniMax-H3, JoyAI-Video-Edit…) restent
 utilisables gratuitement **sur un GPU local** ou via l'interface web des
 Spaces ; voir `modeles_video_a_video.md`.
+
+## 6. Démonstration vidéo gratuite : Space Hugging Face (vérifié le 2 novembre 2026)
+
+Les **Spaces ZeroGPU** sont gratuits, mais avec un quota GPU **par appelant et par jour**
+(`huggingface.co/docs/hub/spaces-zerogpu`) : **2 min sans compte**, 5 min avec un compte
+gratuit, 40 min en PRO. Le backend les appelle **sans aucun jeton** : aucun compte (ni le
+tien, ni un autre) n'est utilisé ni débité.
+
+Space retenu : **JoyAI Video Edit** (`hugging-apps/jdopensource-joyai-video-edit`, modèle
+`jdopensource/JoyAI-Video-Edit` sous licence Apache-2.0), le seul Space officiel trouvé qui
+**modifie une vidéo existante** à partir d'une instruction (les Spaces MiniMax-H3 / Wan
+génèrent une nouvelle vidéo depuis un texte ou une image).
+
+| Point | Valeur (lue dans le code du Space et mesurée) |
+| --- | --- |
+| Durée par appel | 0,5 à 4 s (le montage découpe en passages de 4 s) |
+| Sortie | 24 i/s, 720×1248 ou 1248×720 ; un peu plus courte que l'entrée (paquets de 8 images), complétée par le montage |
+| Quota consommé | ≈ 15 s + 2,2 s par paquet de 8 images (≈ 41 s pour 4 s, ≈ 22 s pour 1 s) |
+| Essai réel | 1 s modifiée en 11,4 s ; montage complet 4–6 s réussi, durée finale à 3 ms près |
+| Limite observée | sur un restylage, l'identité d'une personne peut changer |
+
+Garde-fous (`server/video_editing/providers/hf_space.py`) :
+
+- quota local `HF_SPACE_DAILY_GPU_SECONDS` (110 s par défaut, sous les 120 s anonymes),
+  persisté dans `HF_SPACE_BUDGET_FILE` : une génération qui dépasserait le reste du jour est
+  refusée **avant** l'envoi ; un message « quota » du Space bloque jusqu'au lendemain ;
+- le quota anonyme est celui de **l'adresse IP du serveur**, partagé par tous les visiteurs ;
+- le nom de l'endpoint Gradio est lu dans `/gradio_api/info` (il a changé : `/edit_video_1`) ;
+- `PLAN_FREE_ONLY_FREE_MODELS=true` (défaut) : l'offre Découverte n'utilise **que** ce Space,
+  rien n'est facturé à l'exploitant ; `HF_SPACE_ENABLED=false` le désactive.
+
+Un Space communautaire n'est pas un service garanti (pause, file d'attente, changement
+d'API) : c'est une démonstration gratuite, pas un moteur de production.

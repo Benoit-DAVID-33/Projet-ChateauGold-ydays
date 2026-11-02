@@ -87,6 +87,20 @@ def _parse_fps(rate: str) -> float:
     return value
 
 
+def _rotation(stream: dict) -> int:
+    """Rotation d'affichage (degres) : matrice d'affichage ou ancienne etiquette ``rotate``."""
+    for side in stream.get("side_data_list", []) or []:
+        if "rotation" in side:
+            try:
+                return abs(int(float(side["rotation"])))
+            except (TypeError, ValueError):
+                return 0
+    try:
+        return abs(int(stream.get("tags", {}).get("rotate", 0)))
+    except (TypeError, ValueError):
+        return 0
+
+
 @lru_cache(maxsize=256)
 def _probe_cached(path: str, mtime_ns: int, size: int) -> VideoInfo:
     del mtime_ns  # fait partie de la cle de cache : un fichier modifie est re-sonde
@@ -109,10 +123,15 @@ def _probe_cached(path: str, mtime_ns: int, size: int) -> VideoInfo:
     if video is None:
         raise FfmpegError("Aucune piste vidéo dans ce fichier")
     duration = float(data.get("format", {}).get("duration") or video.get("duration") or 0)
+    width, height = int(video.get("width", 0)), int(video.get("height", 0))
+    if _rotation(video) % 180 == 90:
+        # Video de telephone stockee « couchee » : FFmpeg applique la rotation au
+        # decodage, on raisonne donc sur les dimensions d'affichage.
+        width, height = height, width
     return VideoInfo(
         duration=duration,
-        width=int(video.get("width", 0)),
-        height=int(video.get("height", 0)),
+        width=width,
+        height=height,
         fps=_parse_fps(video.get("avg_frame_rate") or video.get("r_frame_rate") or "0/1"),
         has_audio=any(item.get("codec_type") == "audio" for item in streams),
         size_bytes=size,
@@ -147,12 +166,28 @@ def cut(source: Path, start: float, end: float, destination: Path) -> Path:
     return destination
 
 
-def normalize(source: Path, destination: Path, width: int, height: int, fps: float) -> Path:
-    """Remet un segment au format exact de la source (taille, cadence) pour l'assemblage."""
-    scale = (
+def normalize(
+    source: Path,
+    destination: Path,
+    width: int,
+    height: int,
+    fps: float,
+    duration: float | None = None,
+) -> Path:
+    """Remet un segment au format exact de la source (taille, cadence) pour l'assemblage.
+
+    ``duration`` impose une duree exacte : un rendu IA un peu plus court (certains
+    modeles travaillent par paquets d'images) est complete en figeant sa derniere
+    image, un rendu plus long est coupe. Le son reste ainsi synchronise.
+    """
+    vf = (
         f"scale={width}:{height}:force_original_aspect_ratio=decrease,"
         f"pad={width}:{height}:(ow-iw)/2:(oh-ih)/2,setsar=1,fps={fps:.3f}"
     )
+    timing: list[str] = []
+    if duration is not None:
+        vf += ",tpad=stop_mode=clone:stop_duration=5"
+        timing = ["-t", f"{duration:.3f}"]
     _run(
         [
             _binary("ffmpeg"),
@@ -160,7 +195,8 @@ def normalize(source: Path, destination: Path, width: int, height: int, fps: flo
             "-i",
             str(source),
             "-vf",
-            scale,
+            vf,
+            *timing,
             *_ENCODE,
             "-an",
             str(destination),

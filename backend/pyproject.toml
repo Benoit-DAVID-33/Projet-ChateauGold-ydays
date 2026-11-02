@@ -78,7 +78,7 @@ jobs = 0
 # Exceptions justifiees : "SessionLocal" est le nom conventionnel SQLAlchemy ;
 # "_store" et "_initialized" sont des etats mutables de module (singletons
 # paresseux), pas des constantes, donc volontairement en minuscules.
-good-names = ["SessionLocal", "_store", "_initialized", "_service"]
+good-names = ["SessionLocal", "_store", "_initialized", "_service", "_budget"]
 
 [tool.pylint.format]
 max-line-length = 100

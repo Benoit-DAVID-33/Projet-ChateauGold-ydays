@@ -83,8 +83,8 @@ class _Context:
     info: ffmpeg.VideoInfo
     progress: _Progress
 
-    async def normalize(self, clip: Path, name: str) -> Path:
-        """Remet un extrait au format exact de la source (taille, cadence)."""
+    async def normalize(self, clip: Path, name: str, duration: float) -> Path:
+        """Remet un extrait au format exact de la source (taille, cadence, duree)."""
         return await asyncio.to_thread(
             ffmpeg.normalize,
             clip,
@@ -92,6 +92,7 @@ class _Context:
             self.info.width,
             self.info.height,
             self.info.fps,
+            duration,
         )
 
 
@@ -175,7 +176,7 @@ async def _render_segment(context: _Context, s_index: int, segment: dict) -> lis
         raw = await asyncio.to_thread(
             ffmpeg.cut, context.source, start, end, context.work / f"s{s_index}_keep.mp4"
         )
-        part = await context.normalize(raw, f"s{s_index}_norm.mp4")
+        part = await context.normalize(raw, f"s{s_index}_norm.mp4", end - start)
         context.progress.step(f"Segment {start:g} à {end:g} s conservé")
         return [part]
 
@@ -224,4 +225,5 @@ async def _render_piece(
             offset + piece["end"] - piece["start"],
             context.work / f"{label}_trim.mp4",
         )
-    return current, await context.normalize(trimmed, f"{label}_norm.mp4")
+    exact = piece["end"] - piece["start"]
+    return current, await context.normalize(trimmed, f"{label}_norm.mp4", exact)

@@ -11,6 +11,7 @@
 | LTX 2.3 Retake (via fal.ai) — édition d'une fenêtre temporelle | oui | 2 s → 20 s | HD · résolution source | non publié |
 | Decart Lucy 2.6 (API Decart) | oui | 0.5 s → illimitée | HD · 720p | 0.040 $/s |
 | Luma Ray 3.2 Modify (API Luma) | oui | 1 s → 18 s | Rapide · 540p, HD · 720p, Full HD · 1080p | non publié |
+| JoyAI Video Edit (Space Hugging Face gratuit) | oui | 0.5 s → 4 s | HD · 720p (cadrage 720x1248) | 0.000 $/s |
 | Runway Aleph 2.0 | non | 2 s → 30 s | Full HD · 1080p | non publié |
 | Seedance 2.5 (mode édition) | non | 1 s → illimitée | — | non publié |
 | xAI Grok Imagine (édition) | non | 1 s → 8.7 s | HD · 720p max | non publié |
@@ -123,6 +124,28 @@ Sources : <https://docs.platform.decart.ai/models/video/video-editing>
 > Prix non chiffré sur la page d'édition (grille Luma séparée).
 
 Sources : <https://docs.agents.lumalabs.ai/guides/videos/editing/>
+
+### JoyAI Video Edit (Space Hugging Face gratuit)
+
+- **Clé** : `joyai-edit-space` — intégré
+- **Éditeur** : JD Open Source (Apache-2.0) — **API** : `hugging-apps/jdopensource-joyai-video-edit (API Gradio /edit_video*)`
+- **Entrée** : mp4, mov, webm · durée 0.5 s → 4 s · 100 Mo max
+- **Référence de la vidéo dans le prompt** : aucune (texte seul)
+- **Fenêtre temporelle native** : non · **prompt négatif** : non · **images de référence** : 1
+- **Points forts** : add, generic, recolor, remove, replace, restyle
+- **Fiche de prompt** : `generic` (Modèle générique)
+- **Niveau de preuve** : documentation officielle
+
+| Qualité | Résolution | Paramètres envoyés | Prix indicatif |
+| --- | --- | --- | --- |
+| HD | 720p (cadrage 720x1248) | — | 0.000 $/s (documentation officielle) |
+
+> Gratuit : Space ZeroGPU appelé sans jeton (aucun compte utilisé ni débité).
+> Quota anonyme d'environ 2 min de GPU par jour pour l'IP du serveur, partagé par tous les visiteurs ; un passage de 4 s en consomme environ 40 s.
+> 4 s maximum par appel, sortie 24 i/s recadrée en 720x1248 (ou 1248x720) ; la sortie est un peu plus courte que l'entrée (paquets de 8 images) : le montage complète la fin du passage en figeant la dernière image.
+> Space communautaire : peut être en pause, saturé ou modifié sans préavis.
+
+Sources : <https://huggingface.co/spaces/hugging-apps/jdopensource-joyai-video-edit>, <https://huggingface.co/jdopensource/JoyAI-Video-Edit>, <https://huggingface.co/docs/hub/spaces-zerogpu>
 
 ### Runway Aleph 2.0
 

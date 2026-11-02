@@ -20,6 +20,7 @@ from __future__ import annotations
 import asyncio
 import logging
 from dataclasses import asdict, dataclass, field
+from functools import partial
 
 from server import config
 from server.accounts.plans import Plan
@@ -36,7 +37,7 @@ from server.video_editing.catalog import (
 )
 from server.video_editing.jobs import Job, JobQueue, JobStore, new_job_id
 from server.video_editing.planner import EditRequest, JobPlan, build_plan
-from server.video_editing.routing import NoModelAvailable
+from server.video_editing.routing import NoModelAvailable, choose_model, plan_status
 
 logger = logging.getLogger("goldfx")
 
@@ -288,6 +289,48 @@ def _budget_checks(
         )
 
 
+def free_models_only(plan: Plan) -> bool:
+    """L'offre gratuite est-elle limitee aux modeles gratuits (rien de facture) ?"""
+    return plan.key == "free" and config.PLAN_FREE_ONLY_FREE_MODELS
+
+
+def _free_demo_checks(
+    job_plan: JobPlan, simulated: bool, blockers: list[str], notices: list[dict]
+) -> None:
+    """Demonstration gratuite (Space HF) : quota GPU anonyme du jour suffisant ?"""
+    from server.video_editing.providers.hf_space import estimate_gpu_seconds, get_budget
+
+    needed = 0.0
+    for segment in job_plan.segments:
+        for piece in segment.pieces:
+            for call in piece.calls:
+                model = get_model(call.model)
+                if model is not None and model.provider == "hf_space":
+                    needed += estimate_gpu_seconds(piece.render_end - piece.render_start)
+    if not needed:
+        return
+    notices.append(
+        {
+            "kind": "info",
+            "text": "Démonstration gratuite : rendu en 720p, par passages de 4 secondes "
+            "au maximum. Le délai peut s'allonger aux heures chargées.",
+        }
+    )
+    remaining = get_budget().remaining()
+    if needed > remaining and not simulated:
+        blockers.append(
+            f"Quota gratuit du Space insuffisant : {needed:.0f} s de GPU nécessaires, "
+            f"{remaining:.0f} s restantes aujourd'hui."
+        )
+        notices.append(
+            {
+                "kind": "blocker",
+                "text": "La démonstration gratuite a atteint sa limite pour aujourd'hui : "
+                "raccourcissez la zone modifiée, réessayez demain ou passez à l'offre Studio.",
+            }
+        )
+
+
 async def _probe_source(filename: str) -> ffmpeg.VideoInfo:
     """Sonde la video source (404 si absente, 422 si illisible)."""
     source = safe_path(config.VIDEO_FOLDER, filename)
@@ -346,6 +389,7 @@ class EditingService:
                 quality=quality,
                 aspect_ratio=info.aspect_ratio,
                 preferred_model=request.model,
+                router=partial(choose_model, status=plan_status(free_models_only(plan))),
             )
         except NoModelAvailable as exc:
             details = " ; ".join(f"{key} : {reason}" for key, reason in exc.rejected.items())
@@ -360,6 +404,7 @@ class EditingService:
         _budget_checks(
             job_plan, cost, snapshot, config.VIDEO_EDITING_SIMULATE, blockers, warnings, notices
         )
+        _free_demo_checks(job_plan, config.VIDEO_EDITING_SIMULATE, blockers, notices)
         notices.extend({"kind": "info", "text": text} for text in job_plan.assumptions)
         return Preview(
             source={"filename": request.filename, **info.as_dict()},

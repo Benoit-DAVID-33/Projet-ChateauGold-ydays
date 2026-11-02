@@ -90,6 +90,7 @@ class VideoModel:  # pylint: disable=too-many-instance-attributes
     keeps_audio: bool = True
     image_references: int = 0
     notes: tuple[str, ...] = ()
+    free: bool = False  # aucun cout pour l'exploitant (quota gratuit)
 
     def tier(self, key: str) -> QualityTier | None:
         """Retourne le niveau de qualite demande, ou None s'il n'existe pas."""
@@ -275,6 +276,38 @@ MODELS: dict[str, VideoModel] = {
             "Fidélité réglée par strength (adhere / flex / reimagine), pas par le prompt.",
             "HDR possible en 720p et 1080p (option hdr).",
             "Prix non chiffré sur la page d'édition (grille Luma séparée).",
+        ),
+    ),
+    "joyai-edit-space": VideoModel(
+        key="joyai-edit-space",
+        label="JoyAI Video Edit (Space Hugging Face gratuit)",
+        vendor="JD Open Source (Apache-2.0)",
+        provider="hf_space",
+        endpoint="hugging-apps/jdopensource-joyai-video-edit (API Gradio /edit_video*)",
+        prompt_profile="generic",
+        video_reference="",
+        input_formats=("mp4", "mov", "webm"),
+        min_seconds=0.5,
+        max_seconds=4.0,
+        max_megabytes=100,
+        tiers=(QualityTier("standard", "720p (cadrage 720x1248)", {}, 0.0, "doc"),),
+        strengths=frozenset({"restyle", "recolor", "replace", "add", "remove", "generic"}),
+        evidence="doc",
+        sources=(
+            "https://huggingface.co/spaces/hugging-apps/jdopensource-joyai-video-edit",
+            "https://huggingface.co/jdopensource/JoyAI-Video-Edit",
+            "https://huggingface.co/docs/hub/spaces-zerogpu",
+        ),
+        image_references=1,
+        free=True,
+        notes=(
+            "Gratuit : Space ZeroGPU appelé sans jeton (aucun compte utilisé ni débité).",
+            "Quota anonyme d'environ 2 min de GPU par jour pour l'IP du serveur, partagé "
+            "par tous les visiteurs ; un passage de 4 s en consomme environ 40 s.",
+            "4 s maximum par appel, sortie 24 i/s recadrée en 720x1248 (ou 1248x720) ; la "
+            "sortie est un peu plus courte que l'entrée (paquets de 8 images) : le montage "
+            "complète la fin du passage en figeant la dernière image.",
+            "Space communautaire : peut être en pause, saturé ou modifié sans préavis.",
         ),
     ),
     # --- Modeles references mais NON integres (aucun adaptateur dans ce backend) ---
