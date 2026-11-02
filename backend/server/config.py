@@ -112,28 +112,102 @@ def _env_quotas(name: str) -> dict[str, int]:
 
 # --- Routage multi-fournisseurs (proxy LLM / generation) ---
 # Ordre de priorite des fournisseurs ; le routeur choisit le premier eligible.
-LLM_PROVIDER_PRIORITY = _env_list("LLM_PROVIDER_PRIORITY", "kling,huggingface,local,minimax")
-# Quotas quotidiens par fournisseur (vide = illimite). Ex : "kling=100,huggingface=1000".
+# Les fournisseurs gratuits sont en tete ; les payants ne servent que si
+# LLM_FREE_ONLY=false.
+LLM_PROVIDER_PRIORITY = _env_list(
+    "LLM_PROVIDER_PRIORITY", "local,openrouter,groq,gemini,huggingface,kling,minimax"
+)
+# Garde-fou budget : true (defaut) = le proxy n'utilise QUE des fournisseurs
+# gratuits ; aucun compte (Hugging Face, Kling, MiniMax) ne peut etre debite.
+LLM_FREE_ONLY = _env_bool("LLM_FREE_ONLY", True)
+# Quotas quotidiens par fournisseur (vide = illimite). Ex : "openrouter=50,groq=1000".
 LLM_QUOTAS = _env_quotas("LLM_QUOTAS")
+# Compteurs persistes (un redemarrage ne remet pas les quotas du jour a zero).
+LLM_QUOTA_FILE = Path(os.environ.get("LLM_QUOTA_FILE") or DATA_DIR / "llm_quota.json")
 LLM_TIMEOUT_SECONDS = float(os.environ.get("LLM_TIMEOUT_SECONDS", "60"))
+# Duree de cache de l'etat des fournisseurs (console d'admin).
+LLM_HEALTH_CACHE_SECONDS = float(os.environ.get("LLM_HEALTH_CACHE_SECONDS", "30"))
 
-# Hugging Face Inference (routeur compatible API OpenAI) - ex. MiniMax, Qwen...
-HF_API_BASE_URL = os.environ.get("HF_API_BASE_URL", "https://router.huggingface.co/v1").rstrip("/")
-HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
-HF_MODEL = os.environ.get("HF_MODEL", "MiniMaxAI/MiniMax-M2")
-
-# LLM local (Ollama, vLLM, llama.cpp...) expose en API compatible OpenAI.
+# LLM local (Ollama, vLLM, llama.cpp...) expose en API compatible OpenAI : gratuit.
 LOCAL_LLM_BASE_URL = os.environ.get("LOCAL_LLM_BASE_URL", "http://localhost:11434/v1").rstrip("/")
 LOCAL_LLM_MODEL = os.environ.get("LOCAL_LLM_MODEL", "llama3.1")
 LOCAL_LLM_API_KEY = os.environ.get("LOCAL_LLM_API_KEY", "local")
 
-# MiniMax (API compatible OpenAI pour le texte). La generation video MiniMax
-# (H3) utilise un endpoint dedie non implemente ici : voir docs/apis_gratuites.md.
+# OpenRouter : seuls les modeles suffixes ":free" sont factures 0 $ (impose par le code).
+OPENROUTER_API_BASE_URL = os.environ.get(
+    "OPENROUTER_API_BASE_URL", "https://openrouter.ai/api/v1"
+).rstrip("/")
+OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY", "")
+OPENROUTER_MODEL = os.environ.get("OPENROUTER_MODEL", "openai/gpt-oss-20b:free")
+
+# Groq : palier gratuit (limites par minute/jour) tant que le compte n'est pas
+# passe au palier payant « Developer ».
+GROQ_API_BASE_URL = os.environ.get("GROQ_API_BASE_URL", "https://api.groq.com/openai/v1").rstrip(
+    "/"
+)
+GROQ_API_KEY = os.environ.get("GROQ_API_KEY", "")
+GROQ_MODEL = os.environ.get("GROQ_MODEL", "openai/gpt-oss-120b")
+GROQ_FREE_TIER = _env_bool("GROQ_FREE_TIER", True)
+
+# Google Gemini (endpoint compatible OpenAI) : palier gratuit tant que la
+# facturation n'est pas activee sur le projet Google AI Studio.
+GEMINI_API_BASE_URL = os.environ.get(
+    "GEMINI_API_BASE_URL", "https://generativelanguage.googleapis.com/v1beta/openai"
+).rstrip("/")
+GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "")
+GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "gemini-flash-latest")
+GEMINI_FREE_TIER = _env_bool("GEMINI_FREE_TIER", True)
+
+# Hugging Face Inference (routeur compatible API OpenAI). PAYANT : chaque requete
+# est facturee au proprietaire du jeton (aucun credit pour un compte gratuit).
+# Seul HF_API_TOKEN est lu : jamais HF_TOKEN ni le cache `huggingface-cli login`.
+HF_API_BASE_URL = os.environ.get("HF_API_BASE_URL", "https://router.huggingface.co/v1").rstrip("/")
+HF_API_TOKEN = os.environ.get("HF_API_TOKEN", "")
+HF_MODEL = os.environ.get("HF_MODEL", "MiniMaxAI/MiniMax-M2")
+# Comptes dont le jeton est refuse (ex. compte personnel) et compte attendu.
+HF_FORBIDDEN_ACCOUNTS = frozenset(_env_list("HF_FORBIDDEN_ACCOUNTS", ""))
+HF_EXPECTED_ACCOUNT = os.environ.get("HF_EXPECTED_ACCOUNT", "").strip()
+# Organisation Team/Enterprise a facturer (en-tete X-HF-Bill-To) ; vide = aucun.
+HF_BILL_TO = os.environ.get("HF_BILL_TO", "").strip()
+
+# MiniMax (API compatible OpenAI pour le texte) : payant. La generation video
+# MiniMax (H3) utilise un endpoint dedie non implemente ici.
 MINIMAX_API_BASE_URL = os.environ.get("MINIMAX_API_BASE_URL", "https://api.minimax.io/v1").rstrip(
     "/"
 )
 MINIMAX_MODEL = os.environ.get("MINIMAX_MODEL", "MiniMax-Text-01")
 MINIMAX_API_KEY = os.environ.get("MINIMAX_API_KEY", "")
+
+# --- Prompt engineering video-to-video ---
+# Conversion automatique du prompt avant l'envoi a Kling Omni-Video.
+PROMPT_AUTO_ENHANCE = _env_bool("PROMPT_AUTO_ENHANCE", True)
+
+# --- Edition video par IA (server/video_editing) ---
+# Cles des fournisseurs d'edition video (tous PAYANTS : chaque generation est
+# facturee au compte de la cle). Sans cle, le modele est affiche « indisponible ».
+FAL_API_KEY = os.environ.get("FAL_API_KEY", "")
+FAL_QUEUE_URL = os.environ.get("FAL_QUEUE_URL", "https://queue.fal.run").rstrip("/")
+DECART_API_KEY = os.environ.get("DECART_API_KEY", "")
+DECART_API_BASE_URL = os.environ.get("DECART_API_BASE_URL", "https://api.decart.ai").rstrip("/")
+LUMA_API_KEY = os.environ.get("LUMA_API_KEY", "")
+LUMA_API_BASE_URL = os.environ.get("LUMA_API_BASE_URL", "https://agents.lumalabs.ai").rstrip("/")
+# Dossier de travail des montages (segments, resultats intermediaires, etat des travaux).
+VIDEO_JOBS_DIR = Path(os.environ.get("VIDEO_JOBS_DIR") or DATA_DIR / "edit_jobs")
+VIDEO_MAX_CONCURRENT_JOBS = int(os.environ.get("VIDEO_MAX_CONCURRENT_JOBS", "2"))
+VIDEO_POLL_INTERVAL_SECONDS = float(os.environ.get("VIDEO_POLL_INTERVAL_SECONDS", "5"))
+VIDEO_GENERATION_TIMEOUT_SECONDS = float(os.environ.get("VIDEO_GENERATION_TIMEOUT_SECONDS", "1800"))
+# true = aucun appel payant : le travail est planifie, decoupe et reassemble
+# sans modification IA (utile en demo et en developpement).
+VIDEO_EDITING_SIMULATE = _env_bool("VIDEO_EDITING_SIMULATE", False)
+
+# --- Offres (server/accounts/plans.py) ---
+PLAN_FREE_DAILY_GENERATIONS = int(os.environ.get("PLAN_FREE_DAILY_GENERATIONS", "2"))
+PLAN_FREE_MAX_JOB_COST_USD = float(os.environ.get("PLAN_FREE_MAX_JOB_COST_USD", "1.5"))
+PLAN_STUDIO_DAILY_GENERATIONS = int(os.environ.get("PLAN_STUDIO_DAILY_GENERATIONS", "30"))
+PLAN_STUDIO_MAX_JOB_COST_USD = float(os.environ.get("PLAN_STUDIO_MAX_JOB_COST_USD", "25"))
+PLAN_STUDIO_PRICE_LABEL = os.environ.get("PLAN_STUDIO_PRICE_LABEL", "Sur demande")
+# Comptes autorises a attribuer une offre (vide = personne).
+ADMIN_USERS = frozenset(_env_list("ADMIN_USERS", ""))
 
 # --- Emoji (studio backend) ---
 # URLs essayees dans l'ordre ({lang} = en/fr). Le fichier local, s'il est defini,

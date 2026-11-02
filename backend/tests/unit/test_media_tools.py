@@ -1,6 +1,6 @@
 """Tests des helpers medias (extensions, chemins surs, MIME)."""
 
-from server import media_tools
+from server.media import files as media_tools
 
 
 def test_extension_predicates():

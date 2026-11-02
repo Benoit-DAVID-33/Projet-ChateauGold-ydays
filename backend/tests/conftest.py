@@ -11,7 +11,8 @@ from pathlib import Path
 import pytest
 from fastapi.testclient import TestClient
 
-from server import config, create_app, security
+from server import config, create_app
+from server.accounts import users as security
 from server.db import JsonUserStore
 
 _MARKERS = ("unit", "integration", "functional", "regression", "performance")
@@ -34,6 +35,43 @@ def isolated_user_store(tmp_path, monkeypatch):
     security.clear_cache()
     yield
     security.clear_cache()
+
+
+@pytest.fixture(autouse=True)
+def isolated_llm_router(monkeypatch):
+    """Aucun appel reseau reel vers un fournisseur LLM pendant les tests.
+
+    Le routeur partage est remplace par un routeur vide (les tests qui ont
+    besoin d'un fournisseur le remplacent a leur tour via monkeypatch).
+    """
+    from server import proxy as llm
+    from server.api import admin as admin_router
+    from server.api import proxy as llm_router
+
+    empty = llm.Router([], llm.QuotaTracker(), free_only=True)
+    for module in (llm, admin_router, llm_router):
+        monkeypatch.setattr(module, "get_router", lambda: empty)
+
+
+@pytest.fixture(autouse=True)
+def isolated_video_editing(tmp_path, monkeypatch):
+    """Travaux de montage et offres isoles (dossier et base SQLite temporaires)."""
+    from sqlalchemy import create_engine
+    from sqlalchemy.orm import sessionmaker
+
+    from server.accounts import usage
+    from server.db import models  # noqa: F401  (enregistre les tables)
+    from server.db.engine import Base
+    from server.video_editing import service
+
+    engine = create_engine(f"sqlite:///{(tmp_path / 'plans.db').as_posix()}")
+    Base.metadata.create_all(engine)
+    store = usage.UsageStore(sessionmaker(bind=engine))
+    monkeypatch.setattr(config, "VIDEO_JOBS_DIR", tmp_path / "edit_jobs")
+    monkeypatch.setattr(usage, "_store", store)
+    monkeypatch.setattr(service, "_service", None)
+    yield store
+    engine.dispose()
 
 
 @pytest.fixture()

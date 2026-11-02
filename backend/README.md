@@ -36,72 +36,80 @@ mais répondre à cinq besoins **cohérents** :
 
 ## 2. Carte de l'architecture
 
+**Règle de lecture** : un dossier = une responsabilité, un fichier de `api/` =
+un préfixe d'URL. Les imports sont **absolus** (`from server.video_editing import
+catalog`) : on sait toujours d'où vient un symbole. Chaque `__init__.py` et
+chaque module commence par une docstring qui dit ce qu'il contient.
+
 ```
 backend/
-├── main.py                 # Point d'entree ASGI : app = create_app()
-├── external_api.py         # Service externe de demo (FastAPI, port 5001)
+├── main.py                     # Point d'entrée ASGI : app = create_app()
+├── external_api.py             # Service externe de démo (FastAPI, port 5001)
 ├── server/
-│   ├── __init__.py         # create_app() : middleware, routeurs, erreurs
-│   ├── config.py           # Config centralisee (env, chemins, constantes)
-│   ├── caching.py          # TTLCache + gzip selectif + cache statique
-│   ├── security.py         # Facade utilisateurs (hachage + cache)
-│   ├── db/                 # Persistance SQLAlchemy (plug-and-play)
-│   │   ├── contract.py     # Contrat UserStore (sans dependance lourde)
-│   │   ├── engine.py       # Moteur + fabrique de sessions (DATABASE_URL)
-│   │   ├── models.py       # Modeles SQLAlchemy (User)
-│   │   ├── repository.py   # Implementation SQLAlchemy du contrat
-│   │   ├── json_store.py   # Impl. fichier JSON (repli / tests)
-│   │   └── seed.py         # Import users.json -> base
-│   ├── llm/                # Proxy multi-fournisseurs (LLM / generation)
-│   │   ├── base.py         # Contrat Provider (+ request / result)
-│   │   ├── router.py       # Selection (capacite, quota, priorite, repli)
-│   │   ├── quota.py        # Quotas par fournisseur
-│   │   ├── kling_provider.py    # Fournisseur Kling AI
-│   │   ├── openai_provider.py   # API compatible OpenAI (HF, MiniMax, local)
-│   │   └── registry.py     # Construction depuis la configuration
-│   ├── emoji/              # Studio emoji backend (donnees + plan de calques)
-│   │   ├── dataset.py      # Jeu emojibase FR/EN (CDN ou fichier), cache
-│   │   ├── search.py       # Normalisation, alias FR/EN, classement
-│   │   ├── prompt.py       # Analyse d'une composition (« 2 voitures et un avion »)
-│   │   └── layout.py       # Plan de calques deterministe (positions)
-│   ├── prompting.py        # Amelioration de prompt (video-to-video)
-│   ├── deps.py             # Dependances d'auth (401 / redirection login)
-│   ├── schemas.py          # Modeles Pydantic (validation des corps JSON)
-│   ├── forms.py            # Lecture typee des champs de formulaire
-│   ├── http.py             # Fabrique de clients HTTP async partages
-│   ├── kling.py            # Client async Kling (JWT + erreurs typees)
-│   ├── mailer.py           # Envoi SMTP dans un thread
-│   ├── media_tools.py      # Extensions, chemins surs, FFmpeg
-│   ├── templating.py       # Rendu Jinja2 + compat Flask + ETag
-│   └── routers/            # Endpoints HTTP
-│       ├── auth.py         # /login, /register, /logout
-│       ├── pages.py        # Pages HTML
-│       ├── media.py        # upload, service, suppression, proxy
-│       ├── kling.py        # Proxy Kling AI (/kling/*)
-│       ├── llm.py          # Proxy multi-fournisseurs (/api/llm/*)
-│       ├── emoji.py        # Studio emoji (/api/emoji/*)
-│       ├── prompt.py       # Prompt engineering (/api/prompt/*)
-│       └── admin.py        # Console d'administration (/admin, /api/admin/*)
-├── tests/                  # Suite pytest, rangee par categorie
-│   ├── unit/               # Tests unitaires (dependances mockees)
-│   ├── integration/        # Tests d'integration (composants ensemble)
-│   ├── functional/         # Tests fonctionnels (parcours utilisateur)
-│   ├── regression/         # Tests de non-regression (comportements figes)
-│   ├── performance/        # Tests de charge (exclus par defaut)
-│   ├── conftest.py         # Fixtures + marqueurs automatiques par dossier
-│   └── helpers.py          # Doublures (fausses reponses / clients)
-├── scripts/                # Outils d'industrialisation
-│   ├── profile_app.py      # Profilage cProfile (+ SnakeViz)
-│   └── load_test.py        # Test de charge (debit, percentiles)
-├── docs/                   # Documentation Sphinx (autodoc + napoleon)
-├── requirements.txt        # Dependances d'execution
-├── requirements-dev.txt    # Outils qualite (pytest, ruff, mypy, bandit, pylint, sphinx)
-└── pyproject.toml          # Metadonnees du paquet + config ruff/mypy/pylint/pytest
+│   ├── __init__.py             # create_app() : middleware, routeurs, erreurs
+│   ├── config.py               # Toute la configuration (variables d'environnement)
+│   ├── api/                    # ROUTES HTTP — un fichier par préfixe d'URL
+│   │   ├── __init__.py         # all_routers() + tableau fichier → préfixe
+│   │   ├── auth.py             # /login, /register, /logout
+│   │   ├── pages.py            # /, /video, /image, /studio, /offres...
+│   │   ├── media.py            # /upload (en flux), /videos, /images, /api/videos
+│   │   ├── kling.py            # /kling/* (accès direct Kling, conversion auto du prompt)
+│   │   ├── video_edits.py      # /api/video-edits/* (plan, travaux, fichiers à jeton)
+│   │   ├── prompts.py          # /api/prompt/* (tri, enhance, chat, models)
+│   │   ├── proxy.py            # /api/llm/* (proxy LLM multi-fournisseurs)
+│   │   ├── plans.py            # /api/plans/* (offres, demande Studio)
+│   │   ├── emoji.py            # /api/emoji/*
+│   │   ├── admin.py            # /admin, /api/admin/* (actions réservées à ADMIN_USERS)
+│   │   └── schemas.py          # Corps de requête validés (Pydantic)
+│   ├── core/                   # BRIQUES TRANSVERSES
+│   │   ├── caching.py          # TTLCache, gzip sélectif, cache statique
+│   │   ├── http_clients.py     # Clients httpx partagés (pool keep-alive) + close_all
+│   │   ├── request_context.py  # X-Request-ID + Server-Timing (ASGI pur)
+│   │   ├── auth_deps.py        # require_user / require_user_page / require_admin
+│   │   ├── templating.py       # Rendu Jinja2 + ETag
+│   │   └── forms.py            # Lecture typée des formulaires
+│   ├── accounts/               # COMPTES ET OFFRES
+│   │   ├── users.py            # Hachage, authentification, cache
+│   │   ├── plans.py            # Offres Découverte / Studio (limites appliquées)
+│   │   └── usage.py            # Offre souscrite, quota du jour (réservation atomique)
+│   ├── db/                     # PERSISTANCE SQLAlchemy (modèles, repository, seed)
+│   ├── integrations/           # CLIENTS D'API EXTERNES
+│   │   ├── kling_api.py        # Kling (JWT, erreurs typées, réessais)
+│   │   ├── processing_api.py   # API de traitement de démo
+│   │   └── mailer.py           # SMTP dans un thread
+│   ├── media/                  # FICHIERS MÉDIAS
+│   │   ├── files.py            # Extensions, MIME, chemins sûrs
+│   │   └── ffmpeg.py           # Sonde (cache), découpe, normalisation, assemblage, audio
+│   ├── prompts/                # PROMPT ENGINEERING
+│   │   ├── timecodes.py        # « à 2 s », « de 3 à 5 s », « jusqu'à la fin »
+│   │   ├── cinema.py           # Jargon de tournage FR → EN (travelling, contre-plongée...)
+│   │   ├── lexicon.py          # Traduction FR → EN hors ligne
+│   │   ├── triage.py           # Tri : modifications, moments, intentions, questions
+│   │   ├── enhancer.py         # Prompt par modèle (règles + LLM gratuit guidé par le tri)
+│   │   └── chat.py             # Assistant de plateau (chatbot)
+│   ├── proxy/                  # PROXY LLM (gratuit uniquement par défaut)
+│   │   ├── contract.py         # Contrat Provider
+│   │   ├── router.py           # Sélection, repli, santé parallèle mise en cache
+│   │   ├── quotas.py           # Quotas quotidiens persistés
+│   │   ├── openai_compatible.py# local, OpenRouter, Groq, Gemini, HF (garde-fou compte)
+│   │   ├── kling_generation.py # Génération Kling via le proxy
+│   │   └── registry.py         # Construction depuis la configuration
+│   ├── video_editing/          # ÉDITION VIDÉO PAR IA
+│   │   ├── catalog.py          # Fiches modèles : formats, qualités, prix, preuves
+│   │   ├── routing.py          # Choix du modèle le plus cohérent (expliqué)
+│   │   ├── planner.py          # Plan : segments, contexte, morceaux, coût
+│   │   ├── providers/          # Adaptateurs : kling.py, fal.py, decart.py, luma.py
+│   │   ├── jobs.py             # Travaux persistés + file prioritaire
+│   │   ├── pipeline.py         # Découpe → édition → assemblage → audio d'origine
+│   │   └── service.py          # Orchestration : offre, tri, plan, prompts, quota
+│   └── emoji/                  # Studio emoji backend
+├── scripts/
+│   ├── generate_model_specs.py # Génère docs/specs_modeles.md depuis le catalogue
+│   ├── profile_app.py          # Profilage cProfile (+ SnakeViz)
+│   └── load_test.py            # Test de charge
+├── tests/                      # unit/ integration/ functional/ regression/ performance/
+└── docs/                       # Sphinx + specs_modeles.md + veille
 ```
-
-**Règle de lecture** : le nom du fichier dit la responsabilité.
-`caching` = cache, `security` = utilisateurs, `db` = base, `llm` = fournisseurs,
-`routers/*` = HTTP. Aucun fichier ne mélange deux responsabilités.
 
 ### Flux d'une requête
 
@@ -109,17 +117,80 @@ backend/
 Client
   │
   ▼
-[ GZip selectif ] → [ Cache statique ] → [ Session signee ] → [ Limite upload ]
+[ X-Request-ID / Server-Timing ] → [ GZip sélectif ] → [ Cache statique ] → [ Session ] → [ Limite upload ]
   │
   ▼
-Routeur (auth / pages / media / kling / llm)
-  │  └─ Dependance d'auth : require_user (401) ou require_user_page (redirect)
+server/api/<prefixe>.py   (validation Pydantic + require_user / require_admin)
+  │
   ▼
-Service (security, kling, media_tools, mailer, db, llm.router)
-  │  └─ Cache memoire pour les lectures couteuses
+Service métier (video_editing.service, prompts.*, proxy.router, accounts.usage)
+  │  └─ Caches : santé des fournisseurs (30 s), réponses LLM (10 min), sonde FFmpeg, ETag
   ▼
-Reponse (HTML avec ETag / fichier avec Cache-Control / JSON)
+Intégrations (kling_api, providers/*, ffmpeg) — clients HTTP partagés, flux disque
 ```
+
+### Optimisations de cette version
+
+| Domaine | Changement | Effet |
+| --- | --- | --- |
+| Réseau | Proxy LLM : client httpx **partagé** par fournisseur (pool keep-alive) au lieu d'un client par requête | plus de poignée de main TLS à chaque prompt |
+| Réseau | Adaptateurs vidéo : 3 essais sur 429/5xx avec `Retry-After`, suivi à intervalle croissant | moins d'échecs transitoires, moins d'appels de suivi |
+| Mémoire | Upload et téléchargements (Kling, fournisseurs) **en flux** par blocs de 1 Mo | un fichier de 500 Mo n'est jamais chargé en RAM |
+| Cache | Santé des fournisseurs vérifiée **en parallèle** et gardée 30 s ; réponses LLM 10 min ; sonde FFmpeg (clé = taille + date) ; `ETag` + 304 sur le catalogue | console et studio plus réactifs |
+| Cache | Résultat Kling déjà téléchargé : pas de second transfert à chaque suivi | bande passante économisée |
+| Qualité | Découpes à l'image près (H.264 CRF 17), segments normalisés, audio d'origine conservé | montage sans saut ni décalage son |
+| Observabilité | `X-Request-ID` et `Server-Timing` sur chaque réponse, journal des requêtes lentes | diagnostic sans outil externe |
+| Industrialisation | Imports absolus, un dossier par responsabilité, catalogue unique → doc générée et vérifiée par un test | le code et la doc ne peuvent plus diverger |
+
+### Édition vidéo à des moments précis (`server/video_editing`)
+
+« À la 2e seconde intègre un chevalier, puis à 15 s rajoute un dragon » :
+
+1. **Tri** (`prompts.triage`) : 2 modifications, intention « add », débuts 2 s et 15 s
+   (sans fin précisée : jusqu'à la fin de la vidéo, hypothèse affichée).
+2. **Routage** (`routing`) : pour chaque modification, le modèle le plus cohérent
+   parmi ceux réellement configurés — points forts, durée acceptée, qualité demandée
+   (jamais remplacée par une plus chère, ramenée à l'inférieure seulement si aucun
+   modèle ne la fournit), coût (un prix non publié est estimé au plus cher connu).
+3. **Plan** (`planner`) : `[0–2 s] conservé · [2–15 s] chevalier · [15 s–fin] chevalier
+   puis dragon`. Segment trop court → rendu avec contexte puis recoupé ; trop long →
+   morceaux, l'image de fin du précédent servant de référence de continuité.
+4. **Exécution** (`pipeline`) : découpe à l'image près, une génération par
+   modification, normalisation à la taille et à la cadence de la source, assemblage
+   sans ré-encodage, **piste audio d'origine** remise sur toute la durée.
+
+`POST /api/video-edits/preview` montre tout cela **sans aucun appel payant** ;
+`POST /api/video-edits` réserve le quota (atomique) et met le travail en file
+(priorité Studio). Un appel n'est décompté qu'une fois accepté par le fournisseur ;
+les générations non envoyées sont rendues en cas d'échec ou d'annulation.
+`VIDEO_EDITING_SIMULATE=true` exécute toute la chaîne sans IA ni coût (démo).
+
+### Offres (`server/accounts`)
+
+| | Découverte (gratuite) | Studio |
+| --- | --- | --- |
+| Générations / jour | `PLAN_FREE_DAILY_GENERATIONS` (2) | `PLAN_STUDIO_DAILY_GENERATIONS` (30) |
+| Qualités | Brouillon, Standard | jusqu'à 4K (selon le modèle) |
+| Modifications / vidéo · durée | 2 · 30 s | 8 · 180 s |
+| Plafond de coût par vidéo | 1,50 $ | 25 $ |
+| File de traitement | normale | prioritaire |
+
+Chaque avantage affiché sur `/offres` est une limite appliquée par le code. Le
+paiement en ligne n'est **pas** intégré : `POST /api/plans/upgrade-request`
+enregistre la demande, un compte listé dans `ADMIN_USERS` l'active.
+
+### Prompt engineering : tri puis LLM
+
+Approche retenue (et implémentée) : un **tri déterministe** avant tout LLM
+(`prompts.triage` : découpage, moments, intention, jargon cinéma, questions),
+puis un **LLM gratuit** qui ne fait que reformuler, guidé par le tri et un
+exemple. Le code garantit la structure (un prompt par modification, référence
+`<<<video_1>>>` / `@Video1`, moments retirés du texte) et rejette une réponse
+incohérente. Un modèle de **raisonnement** gratuit (`openai/gpt-oss-120b` sur
+Groq, `GROQ_API_KEY`) donne les meilleures reformulations ; en local, un modèle
+instruct de 8 à 14 B (Ollama) suffit, car le jargon est déjà traduit par
+`prompts.cinema`. Il n'existe pas de LLM local « spécialisé cinéma » fiable : le
+glossaire injecté joue ce rôle. Sans LLM, les règles restent disponibles.
 
 ---
 
@@ -133,10 +204,10 @@ requête**.
 
 | Mécanisme | Fichier | Ce que ça apporte |
 | --- | --- | --- |
-| **Cache utilisateurs** (TTL) | `security.py` + `caching.py` | Évite de relire `users.json` / la base à chaque affichage de page |
+| **Cache utilisateurs** (TTL) | `accounts/users.py` + `core/caching.py` | Évite de relire `users.json` / la base à chaque affichage de page |
 | **GZip sélectif** | `caching.py` | Compresse HTML/CSS/JS/JSON, **jamais** les médias (préserve les requêtes HTTP Range de la vidéo) |
 | **Cache-Control statique** | `caching.py` | `public, max-age=1 an, immutable` sur `/static/*` |
-| **Cache-Control médias** | `routers/media.py` | `private, max-age=1 h` sur `/images/*` et `/videos/*` |
+| **Cache-Control médias** | `api/media.py` | `private, max-age=1 h` sur `/images/*` et `/videos/*` |
 | **ETag + 304 sur HTML** | `templating.py` | Le navigateur revalide les pages : réponse `304` au lieu d'un rechargement complet |
 | **Bytecode Jinja** | `templating.py` | Cache de compilation des templates + `auto_reload=False` en prod |
 
@@ -174,7 +245,7 @@ Objectif : pouvoir router une demande vers **Kling AI**, un modèle **Hugging
 Face** (MiniMax, Qwen…), ou un **LLM local** (Ollama, vLLM), **par
 configuration**, sans modifier le code appelant.
 
-Le proxy vit dans `server/llm/` et **ne remplace pas** `/kling/*` : il ajoute un
+Le proxy vit dans `server/proxy/` et **ne remplace pas** `/kling/*` : il ajoute un
 namespace distinct `/api/llm/*`. La partie existante continue de fonctionner à
 l'identique.
 
@@ -188,11 +259,16 @@ l'identique.
 **Politique de sélection** (dans l'ordre) :
 
 1. **capacité** — le fournisseur sait-il faire ce type de génération ?
-2. **quota** — on écarte ceux ayant atteint leur limite (`LLM_QUOTAS`) ;
-3. **priorité** — ordre de `LLM_PROVIDER_PRIORITY` ;
-4. **cohérence** — une tâche déjà confiée reste chez son fournisseur (le suivi
+2. **configuration** — sans clé / URL, il est ignoré (aucun appel inutile) ;
+3. **gratuité** — avec `LLM_FREE_ONLY=true` (**défaut**), seuls les
+   fournisseurs gratuits servent : aucun compte (Hugging Face, Kling, MiniMax)
+   ne peut être débité par le proxy ;
+4. **quota** — on écarte ceux ayant atteint leur limite **du jour** (`LLM_QUOTAS`,
+   remise à zéro quotidienne, compteurs persistés dans `LLM_QUOTA_FILE`) ;
+5. **priorité** — ordre de `LLM_PROVIDER_PRIORITY` ;
+6. **cohérence** — une tâche déjà confiée reste chez son fournisseur (le suivi
    ne change pas de fournisseur en cours de route) ;
-5. **repli** — si le fournisseur échoue, on essaie le suivant.
+7. **repli** — si le fournisseur échoue, on essaie le suivant.
 
 **Un adaptateur pour plusieurs services** : `OpenAICompatibleProvider` parle
 l'API `/chat/completions`, exposée par Hugging Face (routeur d'inférence),
@@ -200,22 +276,30 @@ MiniMax, vLLM, Ollama… Changer de service = changer trois variables d'env.
 
 | Variable | Rôle |
 | --- | --- |
-| `LLM_PROVIDER_PRIORITY` | Ordre des fournisseurs (ex. `kling,huggingface,local,minimax`) |
-| `LLM_QUOTAS` | Quotas quotidiens (ex. `kling=100,huggingface=1000`) |
-| `HF_API_BASE_URL`, `HF_API_TOKEN`, `HF_MODEL` | Hugging Face / MiniMax |
-| `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_API_KEY` | LLM local |
-| `MINIMAX_API_BASE_URL`, `MINIMAX_MODEL`, `MINIMAX_API_KEY` | MiniMax (texte) |
+| `LLM_PROVIDER_PRIORITY` | Ordre (défaut `local,openrouter,groq,gemini,huggingface,kling,minimax`) |
+| `LLM_FREE_ONLY` | `true` (défaut) : fournisseurs gratuits uniquement |
+| `LLM_QUOTAS`, `LLM_QUOTA_FILE` | Quotas quotidiens (ex. `openrouter=45,groq=900`) et leur fichier |
+| `LOCAL_LLM_BASE_URL`, `LOCAL_LLM_MODEL`, `LOCAL_LLM_API_KEY` | LLM local — **gratuit** |
+| `OPENROUTER_API_KEY`, `OPENROUTER_MODEL` | OpenRouter — gratuit **seulement** avec un modèle `:free` |
+| `GROQ_API_KEY`, `GROQ_MODEL`, `GROQ_FREE_TIER` | Groq — palier gratuit |
+| `GEMINI_API_KEY`, `GEMINI_MODEL`, `GEMINI_FREE_TIER` | Gemini — palier gratuit |
+| `HF_API_TOKEN`, `HF_MODEL`, `HF_FORBIDDEN_ACCOUNTS`, `HF_EXPECTED_ACCOUNT`, `HF_BILL_TO` | Hugging Face — **payant** (facturé au propriétaire du jeton) |
+| `MINIMAX_API_BASE_URL`, `MINIMAX_MODEL`, `MINIMAX_API_KEY` | MiniMax (texte) — payant |
 
 Routes (authentification requise) : `GET /api/llm/providers`,
 `POST /api/llm/generate`, `GET /api/llm/status/{task_id}`.
 
-**Modèles vidéo ouverts gratuits** : Wan 2.2 et MiniMax-H3 sont servis par
-Hugging Face Inference Providers (fal/replicate/wavespeed) → voir
-`docs/apis_gratuites.md` pour la matrice vérifiée et les quotas.
+**Hugging Face n'est pas gratuit** : un compte gratuit n'a aucun crédit
+d'inférence et chaque requête routée est facturée au propriétaire du jeton. Le
+fournisseur `huggingface` est donc écarté par défaut ; s'il est réactivé, le
+propriétaire du jeton est vérifié (`whoami-v2`) contre `HF_FORBIDDEN_ACCOUNTS` /
+`HF_EXPECTED_ACCOUNT` avant tout appel. Seul `HF_API_TOKEN` est lu (jamais
+`HF_TOKEN` ni le cache de `huggingface-cli login`). Détails :
+`docs/apis_gratuites.md`.
 
 **Ajouter un fournisseur** : écrire une classe héritant de `Provider`
-(`server/llm/base.py`), l'enregistrer dans `_BUILDERS`
-(`server/llm/registry.py`), puis l'activer via `LLM_PROVIDER_PRIORITY`.
+(`server/proxy/base.py`), l'enregistrer dans `_BUILDERS`
+(`server/proxy/registry.py`), puis l'activer via `LLM_PROVIDER_PRIORITY`.
 
 > État : **conception + socle fonctionnel** (routeur, quotas, fournisseurs,
 > tests). Non branché sur l'interface : l'existant n'est pas impacté.
@@ -260,23 +344,31 @@ les emojis, plan de calques et aperçu canvas).
 | `GET /admin` | Page de la console (auth requise) |
 | `GET /api/admin/overview` | État complet en une requête (auth requise) |
 
-### Prompt engineering (`/api/prompt/enhance`)
+### Prompt engineering (`/api/prompt/enhance`, `/api/prompt/models`)
 
-Transforme une demande **naturelle et parfois vague** en prompt structuré pour
-un modèle vidéo→vidéo.
+Transforme une demande **naturelle et parfois vague** en prompt(s) structuré(s)
+pour un modèle vidéo→vidéo : `kling`, `runway`, `luma`, `decart`, `seedance`,
+`xai`, `wan`, `generic` (fiches dans `server/prompts/enhancer.py`, sources dans
+`docs/modeles_video_a_video.md`).
 
-- **Mode règles** (toujours disponible, hors ligne) : détection de l'intention
-  (ajouter / retirer / remplacer / recolorer / restyler / fond / météo / angle /
-  plan suivant ou précédent), extraction du sujet et de la cible, puis
-  application des **structures documentées par les fournisseurs** (Kling O1,
-  Luma Ray 3.2, Decart).
-- **Détection multi-intention** : « enlève la personne **et** mets un ciel de
-  nuit » → un seul prompt propre (`Supprime la personne derrière.`) + conseil de
-  séparer les modifications (les modèles préfèrent une modification par prompt).
-- **Clause « conserver »** ajoutée systématiquement : en vidéo→vidéo, dire ce qui
-  ne doit **pas** changer est aussi important que le reste.
-- **Mode LLM** : si un fournisseur texte est configuré, le prompt est réécrit par
-  le modèle (repli automatique sur les règles).
+- **Découpage multi-modifications** : « enlève le logo **et** mets de la neige »
+  → `steps` = 2 prompts (un par génération).
+- **Intention** par étape (ajouter / retirer / remplacer / recolorer / restyler /
+  fond / météo / lumière / angle / plan suivant ou précédent).
+- **Traduction FR → EN hors ligne** (`server/prompts/lexicon.py`) : les modèles
+  suivent mieux l'anglais ; si un mot est inconnu, le prompt reste en français
+  (`translated: false`) plutôt que de mélanger les langues.
+- **Gabarit par modèle** : `<<<video_1>>>` pour Kling Omni, mot déclencheur pour
+  Decart / Seedance, description du résultat pour Luma, clause « Keep …
+  unchanged » seulement quand le modèle en tire profit ; enrichissement
+  (intégration, lumière, cohérence temporelle), `negative_prompt` et `params`
+  conseillés (`refer_type` Kling, `strength` Luma).
+- **Mode LLM** (`use_llm`) : réécriture par un fournisseur **gratuit**, en JSON,
+  guidée par la fiche du modèle et le brouillon par règles ; repli automatique.
+- **Conversion automatique** sur `POST /kling/omni-video` (`PROMPT_AUTO_ENHANCE`,
+  défaut `true`, ou `"auto_prompt": false` par requête) : le prompt réellement
+  envoyé est renvoyé dans `prompt_conversion` ; un prompt déjà structuré
+  (`<<<video_1>>>`) est envoyé tel quel.
 
 > Méthode recommandée : LLM pour la reformulation + règles pour garantir la
 > structure et le repli hors ligne. Voir aussi `docs/apis_gratuites.md`.
@@ -319,6 +411,7 @@ from fastapi import Depends
 from sqlalchemy.orm import Session
 from server.db import get_session
 from server.db.models import User
+
 
 @router.get("/exemple")
 def exemple(session: Session = Depends(get_session)):
@@ -505,7 +598,7 @@ dans une autre application.
 - **YAGNI** — pas de code pour des cas hypothétiques ni de « câbles
   débranchés » ; on ajoute une brique quand elle sert.
 - **Moindre surprise** — un comportement attendu : `import media` ne masque pas
-  un module standard (d'où `media_tools`), `scripts/profile_app.py` n'entre pas
+  un module standard (d'où `media/files.py`), `scripts/profile_app.py` n'entre pas
   en collision avec le module standard `profile`.
 - **Compartimentalisation** — « on ne parle pas aux étrangers » : les routeurs
   ne connaissent que les interfaces des services, jamais leurs détails
@@ -526,13 +619,13 @@ dans une autre application.
 ### Structure
 
 - **Un module = une responsabilité**, nommé par ce qu'il fait (`caching`,
-  `security`, `db`, `media_tools`, `llm`…).
+  `accounts`, `db`, `media`, `proxy`…).
 - **Chaque module commence par une docstring** d'une ligne décrivant son rôle ;
   chaque fonction publique a une docstring (style Google).
 - **Routeurs** : un fichier par domaine (`auth`, `pages`, `media`, `kling`, `llm`).
 - **Services** : logique métier et I/O hors des routeurs.
 - **Configuration** : tout passe par `config.py` (jamais de valeur en dur).
-- **Visibilité** : déclarée dans `__all__` des paquets (`server/db`, `server/llm`).
+- **Visibilité** : déclarée dans `__all__` des paquets (`server/db`, `server/proxy`).
 - **Tests** : rangés par catégorie (dossier), fixtures dans `tests/conftest.py`,
   doublures dans `tests/helpers.py`.
 - **Documentation** : `README.md` (ce fichier) + `docs/` (Sphinx).
@@ -542,7 +635,7 @@ dans une autre application.
 
 | Objectif | Où intervenir |
 | --- | --- |
-| Nouvelle route HTTP | `server/routers/<domaine>.py` + `create_app()` |
+| Nouvelle route HTTP | `server/api/<prefixe>.py` + `all_routers()` (`server/api/__init__.py`) |
 | Nouvelle table | `server/db/models.py` (créée par `init_db()`) |
-| Nouveau fournisseur de modèle | `server/llm/<provider>.py` + `_BUILDERS` |
+| Nouveau fournisseur de modèle | `server/proxy/<provider>.py` + `_BUILDERS` |
 | Nouveau type de test | dossier `tests/<categorie>/` (marqueur automatique) |

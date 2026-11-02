@@ -4,7 +4,7 @@ Portage fidele de `parsePrompt` du studio client : detecte les quantites
 (chiffres ou mots) et les termes connus, en ignorant les conjonctions.
 """
 
-from .search import normalize
+from server.emoji.search import normalize
 
 QUANTITY_WORDS = {
     "one": 1,

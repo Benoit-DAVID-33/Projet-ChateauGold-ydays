@@ -4,7 +4,7 @@ import asyncio
 
 import pytest
 
-from server import mailer
+from server.integrations import mailer
 
 
 def test_send_contact_email_raises_mail_error(monkeypatch):

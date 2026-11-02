@@ -51,7 +51,7 @@ def test_journey_upload_view_delete_image(client, media_folders):
 
 def test_journey_contact_form(client, monkeypatch):
     """Un utilisateur connecte envoie le formulaire de contact."""
-    from server.routers import pages
+    from server.api import pages
 
     async def fake_send(name, email, message):
         return None

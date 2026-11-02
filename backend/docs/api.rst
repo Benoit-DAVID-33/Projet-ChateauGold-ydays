@@ -1,20 +1,69 @@
-Reference de l'API (generee depuis le code)
-===========================================
+Référence de l'API (autodoc)
+=============================
 
-Configuration et application
------------------------------
+Générée automatiquement depuis les docstrings du paquet ``server``.
+
+Application et configuration
+----------------------------
 
 .. automodule:: server
    :members:
 
 .. automodule:: server.config
+
+Routes HTTP (``server.api``)
+----------------------------
+
+.. automodule:: server.api
    :members:
 
-Securite et persistance
------------------------
-
-.. automodule:: server.security
+.. automodule:: server.api.video_edits
    :members:
+
+.. automodule:: server.api.prompts
+   :members:
+
+.. automodule:: server.api.plans
+   :members:
+
+.. automodule:: server.api.admin
+   :members:
+
+.. automodule:: server.api.schemas
+   :members:
+
+Briques transverses (``server.core``)
+-------------------------------------
+
+.. automodule:: server.core.caching
+   :members:
+
+.. automodule:: server.core.http_clients
+   :members:
+
+.. automodule:: server.core.request_context
+   :members:
+
+.. automodule:: server.core.auth_deps
+   :members:
+
+.. automodule:: server.core.templating
+   :members:
+
+Comptes et offres (``server.accounts``)
+---------------------------------------
+
+.. automodule:: server.accounts.users
+   :members:
+
+.. automodule:: server.accounts.plans
+   :members:
+
+.. automodule:: server.accounts.usage
+   :members:
+
+Persistance (``server.db``)
+---------------------------
 
 .. automodule:: server.db
    :members:
@@ -22,77 +71,80 @@ Securite et persistance
 .. automodule:: server.db.contract
    :members:
 
-Cache et performance
---------------------
+Intégrations et médias
+----------------------
 
-.. automodule:: server.caching
+.. automodule:: server.integrations.kling_api
    :members:
 
-Medias et reseau
-----------------
-
-.. automodule:: server.media_tools
+.. automodule:: server.integrations.mailer
    :members:
 
-.. automodule:: server.kling
+.. automodule:: server.media.files
    :members:
 
-.. automodule:: server.http
+.. automodule:: server.media.ffmpeg
    :members:
 
-Proxy multi-fournisseurs
+Prompt engineering (``server.prompts``)
+---------------------------------------
+
+.. automodule:: server.prompts.triage
+   :members:
+
+.. automodule:: server.prompts.timecodes
+   :members:
+
+.. automodule:: server.prompts.cinema
+   :members:
+
+.. automodule:: server.prompts.enhancer
+   :members:
+
+.. automodule:: server.prompts.chat
+   :members:
+
+Proxy LLM (``server.proxy``)
+----------------------------
+
+.. automodule:: server.proxy
+   :members:
+
+.. automodule:: server.proxy.contract
+   :members:
+
+.. automodule:: server.proxy.router
+   :members:
+
+.. automodule:: server.proxy.openai_compatible
+   :members:
+
+Édition vidéo (``server.video_editing``)
+----------------------------------------
+
+.. automodule:: server.video_editing.catalog
+   :members:
+
+.. automodule:: server.video_editing.routing
+   :members:
+
+.. automodule:: server.video_editing.planner
+   :members:
+
+.. automodule:: server.video_editing.jobs
+   :members:
+
+.. automodule:: server.video_editing.pipeline
+   :members:
+
+.. automodule:: server.video_editing.service
+   :members:
+
+.. automodule:: server.video_editing.providers.base
+   :members:
+
+Emoji (``server.emoji``)
 ------------------------
 
-.. automodule:: server.llm
-   :members:
-
-.. automodule:: server.llm.base
-   :members:
-
-.. automodule:: server.llm.router
-   :members:
-
-Studio emoji
-------------
-
 .. automodule:: server.emoji
-   :members:
-
-.. automodule:: server.emoji.dataset
-   :members:
-
-.. automodule:: server.emoji.search
-   :members:
-
-.. automodule:: server.emoji.prompt
-   :members:
-
-.. automodule:: server.emoji.layout
-   :members:
-
-Rendu et formulaires
---------------------
-
-.. automodule:: server.prompting
-   :members:
-
-.. automodule:: server.routers.admin
-   :members:
-
-.. automodule:: server.routers.prompt
-   :members:
-
-.. automodule:: server.templating
-   :members:
-
-.. automodule:: server.schemas
-   :members:
-
-.. automodule:: server.forms
-   :members:
-
-.. automodule:: server.mailer
-   :members:
-
-.. automodule:: server.deps
    :members:

@@ -11,7 +11,7 @@ import random
 import re
 from dataclasses import dataclass
 
-from .search import normalize
+from server.emoji.search import normalize
 
 _MASK = 0xFFFFFFFF
 _MAX_DIMENSION = 8192

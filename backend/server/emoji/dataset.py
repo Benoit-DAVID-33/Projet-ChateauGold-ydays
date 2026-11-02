@@ -13,8 +13,8 @@ import json
 import logging
 from pathlib import Path
 
-from .. import config
-from ..caching import TTLCache
+from server import config
+from server.core.caching import TTLCache
 
 logger = logging.getLogger("goldfx")
 

@@ -11,7 +11,7 @@ reproduit pas ``pathsend`` : on simule donc le flux ASGI.
 
 import asyncio
 
-from server.caching import SelectiveGZipMiddleware
+from server.core.caching import SelectiveGZipMiddleware
 
 
 def test_gzip_middleware_forwards_pathsend():

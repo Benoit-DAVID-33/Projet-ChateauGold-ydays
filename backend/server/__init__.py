@@ -1,23 +1,18 @@
 """Application FastAPI GOLD FX (ASGI) - point d'assemblage.
 
-Carte rapide du paquet ``server`` :
+Carte rapide du paquet ``server`` (un dossier = une responsabilite) :
 
-- ``config``      : configuration (variables d'environnement, chemins).
-- ``caching``     : cache memoire, compression gzip selective, cache statique.
-- ``security``    : facade utilisateurs (hachage + authentification).
-- ``db``          : persistance SQLAlchemy (modele, repository, seed).
-- ``deps``        : dependances d'authentification (401 / redirection).
-- ``schemas``     : modeles Pydantic des corps de requete.
-- ``forms``       : lecture typee des champs de formulaire.
-- ``http``        : fabrique de clients HTTP asynchrones partages.
-- ``kling``       : client async de l'API Kling (JWT + erreurs typees).
-- ``llm``         : proxy multi-fournisseurs (routeur, quotas, providers).
-- ``emoji``       : studio emoji backend (donnees, recherche, plan de calques).
-- ``prompting``   : amelioration de prompt (prompt engineering video-to-video).
-- ``mailer``      : envoi d'emails SMTP dans un thread.
-- ``media_tools`` : helpers medias (extensions, chemins surs, FFmpeg).
-- ``templating``  : rendu Jinja2 + compatibilite Flask (url_for, flash).
-- ``routers``     : endpoints HTTP (auth, pages, media, kling).
+- ``config``          : configuration (variables d'environnement, chemins).
+- ``api/``            : routes HTTP, un fichier par prefixe d'URL (+ ``schemas``).
+- ``core/``           : briques transverses (cache, clients HTTP, auth, templates).
+- ``accounts/``       : utilisateurs, offres (gratuite / Studio) et quotas d'usage.
+- ``db/``             : persistance SQLAlchemy (modeles, repository, seed).
+- ``integrations/``   : clients d'API externes (Kling, API de traitement, SMTP).
+- ``media/``          : fichiers medias et operations FFmpeg.
+- ``prompts/``        : tri des demandes, jargon cinema, prompt engineering, chatbot.
+- ``proxy/``          : routeur multi-fournisseurs LLM (gratuits par defaut).
+- ``video_editing/``  : edition video par IA (catalogue, routage, plan, travaux).
+- ``emoji/``          : studio emoji backend.
 
 Ce module assemble le tout : middleware (session, cache, gzip, limite d'upload),
 fichiers statiques, gestionnaires d'exceptions et routeurs.
@@ -32,14 +27,17 @@ from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, RedirectResponse
 from starlette.middleware.sessions import SessionMiddleware
 
-from . import api_client, config, kling
-from .caching import CompressibleStaticFiles, SelectiveGZipMiddleware, StaticCacheMiddleware
-from .deps import NotAuthenticated
-from .kling import KlingError
-from .routers import admin, auth, media, pages, prompt
-from .routers import emoji as emoji_router
-from .routers import kling as kling_router
-from .routers import llm as llm_router
+from server import config
+from server.api import all_routers
+from server.core.auth_deps import NotAuthenticated
+from server.core.caching import (
+    CompressibleStaticFiles,
+    SelectiveGZipMiddleware,
+    StaticCacheMiddleware,
+)
+from server.core.request_context import RequestContextMiddleware
+from server.integrations import kling_api, processing_api
+from server.integrations.kling_api import KlingError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
 logger = logging.getLogger("goldfx")
@@ -50,7 +48,7 @@ def _warm_database() -> None:
     from sqlalchemy.exc import SQLAlchemyError
 
     try:
-        from . import db
+        from server import db
 
         db.init_db()
     except (OSError, SQLAlchemyError):
@@ -63,8 +61,13 @@ async def lifespan(_: FastAPI):
     logger.info("GOLD FX demarre (API externe : %s)", config.API_BASE_URL)
     threading.Thread(target=_warm_database, name="db-warmup", daemon=True).start()
     yield
-    await kling.aclose()
-    await api_client.aclose()
+    from server.core.http_clients import close_all
+    from server.video_editing import service
+
+    await service.shutdown()
+    await kling_api.aclose()
+    await processing_api.aclose()
+    await close_all()
 
 
 def create_app() -> FastAPI:
@@ -89,6 +92,7 @@ def create_app() -> FastAPI:
     app.add_middleware(StaticCacheMiddleware, max_age=config.STATIC_CACHE_SECONDS)
     if config.ENABLE_GZIP:
         app.add_middleware(SelectiveGZipMiddleware, minimum_size=config.GZIP_MINIMUM_SIZE)
+    app.add_middleware(RequestContextMiddleware)
 
     @app.middleware("http")
     async def limit_upload_size(request: Request, call_next):
@@ -127,13 +131,7 @@ def create_app() -> FastAPI:
         logger.exception("Erreur non gérée sur %s", request.url.path)
         return JSONResponse({"error": "Erreur interne du serveur"}, status_code=500)
 
-    app.include_router(auth.router)
-    app.include_router(pages.router)
-    app.include_router(media.router)
-    app.include_router(kling_router.router)
-    app.include_router(llm_router.router)
-    app.include_router(emoji_router.router)
-    app.include_router(prompt.router)
-    app.include_router(admin.router)
+    for router in all_routers():
+        app.include_router(router)
 
     return app

@@ -11,7 +11,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from .contract import UserRecord, UserStore
+from server.db.contract import UserRecord, UserStore
 
 logger = logging.getLogger("goldfx")
 

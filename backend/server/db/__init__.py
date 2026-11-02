@@ -22,9 +22,9 @@ from collections.abc import Iterator
 from importlib import import_module
 from typing import Any
 
-from .. import config
-from .contract import UserRecord, UserStore
-from .json_store import JsonUserStore
+from server import config
+from server.db.contract import UserRecord, UserStore
+from server.db.json_store import JsonUserStore
 
 __all__ = [
     "JsonUserStore",
@@ -67,9 +67,9 @@ def init_db(target_engine=None, session_factory=None) -> None:
     """
     global _initialized  # pylint: disable=global-statement
     with _init_lock:
-        from .engine import Base, SessionLocal, engine
-        from .repository import SqlAlchemyUserStore
-        from .seed import seed_from_json
+        from server.db.engine import Base, SessionLocal, engine
+        from server.db.repository import SqlAlchemyUserStore
+        from server.db.seed import seed_from_json
 
         target_engine = target_engine if target_engine is not None else engine
         session_factory = session_factory if session_factory is not None else SessionLocal
@@ -89,8 +89,8 @@ def build_user_store() -> UserStore:
     """Instancie le store utilisateurs configure (SQLAlchemy par defaut)."""
     if config.USER_STORE == "json":
         return JsonUserStore(config.USERS_FILE)
-    from .engine import SessionLocal
-    from .repository import SqlAlchemyUserStore
+    from server.db.engine import SessionLocal
+    from server.db.repository import SqlAlchemyUserStore
 
     ensure_initialized()
     return SqlAlchemyUserStore(SessionLocal)
@@ -98,7 +98,7 @@ def build_user_store() -> UserStore:
 
 def get_session() -> Iterator[Any]:
     """Dependance FastAPI : fournit une session SQLAlchemy puis la ferme."""
-    from .engine import SessionLocal
+    from server.db.engine import SessionLocal
 
     ensure_initialized()
     session = SessionLocal()

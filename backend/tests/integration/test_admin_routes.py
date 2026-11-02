@@ -2,7 +2,7 @@
 
 import pytest
 
-from server.routers import admin as admin_router
+from server.api import admin as admin_router
 
 
 @pytest.fixture()
@@ -63,3 +63,20 @@ def test_prompt_enhance_validates_input(auth_client):
         auth_client.post("/api/prompt/enhance", json={"text": "x", "model": "inconnu"}).status_code
         == 422
     )
+
+
+def test_prompt_models_route(auth_client):
+    response = auth_client.get("/api/prompt/models")
+    assert response.status_code == 200
+    keys = [model["key"] for model in response.json()["models"]]
+    assert {"kling", "runway", "luma", "decart", "seedance", "xai", "wan", "generic"} <= set(keys)
+
+
+def test_prompt_enhance_returns_steps(auth_client):
+    response = auth_client.post(
+        "/api/prompt/enhance",
+        json={"text": "enlève le chat et ajoute un chien", "model": "runway"},
+    )
+    payload = response.json()
+    assert payload["model"] == "runway"
+    assert len(payload["steps"]) == 2

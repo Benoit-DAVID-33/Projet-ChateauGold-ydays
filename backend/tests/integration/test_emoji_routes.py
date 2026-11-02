@@ -2,7 +2,7 @@
 
 import pytest
 
-from server.routers import emoji as emoji_router
+from server.api import emoji as emoji_router
 
 DATASET = [
     {

@@ -19,6 +19,11 @@ class FakeResponse:
         self.text = content.decode("utf-8", errors="replace")
         self.headers = headers or {"content-type": "application/json"}
 
+    async def aiter_bytes(self, chunk_size: int = 65536):
+        """Imite le flux httpx : renvoie le contenu par morceaux."""
+        for index in range(0, len(self.content), chunk_size):
+            yield self.content[index : index + chunk_size]
+
     def json(self) -> Any:
         """Retourne le corps JSON, ou leve ValueError s'il est absent."""
         if self._json is None:
@@ -53,3 +58,21 @@ class FakeClient:
     async def get(self, url: str, **kwargs: Any) -> FakeResponse:
         self.calls.append(("GET", url, kwargs))
         return self._next()
+
+    def stream(self, method: str, url: str, **kwargs: Any) -> "_FakeStream":
+        """Imite ``AsyncClient.stream`` (gestionnaire de contexte asynchrone)."""
+        self.calls.append((method, url, kwargs))
+        return _FakeStream(self._next())
+
+
+class _FakeStream:
+    """Contexte asynchrone renvoyant une reponse lisible par morceaux."""
+
+    def __init__(self, response: FakeResponse) -> None:
+        self._response = response
+
+    async def __aenter__(self) -> FakeResponse:
+        return self._response
+
+    async def __aexit__(self, *exc: object) -> bool:
+        return False

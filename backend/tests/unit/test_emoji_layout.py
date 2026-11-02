@@ -1,6 +1,11 @@
 """Tests unitaires du plan de calques emoji (determinisme, bornes, disposition)."""
 
-from server.emoji.layout import LayerOptions, make_rng, plan_layers, safe_name
+from server.emoji.layout import (
+    LayerOptions,
+    make_rng,
+    plan_layers,
+    safe_name,
+)
 
 
 def test_safe_name_is_filesystem_friendly():

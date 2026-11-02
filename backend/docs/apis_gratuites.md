@@ -86,24 +86,54 @@ du projet), tous accessibles via une API **compatible OpenAI** :
 | Mistral AI | palier gratuit | modèles Mistral |
 | **Local** (Ollama, vLLM, llama.cpp) | **gratuit, sans quota** | API compatible OpenAI (`/v1`) |
 
-## 5. Recommandation pour ce projet
+## 5. Politique du proxy : « gratuit uniquement » (revérifié le 2 novembre 2026)
 
-Le proxy `server/llm/` implémente déjà un **provider compatible OpenAI** (un seul
-adaptateur couvre Hugging Face, MiniMax, vLLM, Ollama). Configuration conseillée
-pour un usage **sans budget** :
+Revérifié sur `huggingface.co/docs/inference-providers/pricing` : un compte
+gratuit n'a **aucun crédit** d'inférence et **toute requête routée par Hugging
+Face est facturée au propriétaire du jeton** (ou à l'organisation de
+`X-HF-Bill-To`). Mettre son jeton personnel dans `HF_API_TOKEN` ferait donc
+payer son **compte HF personnel**.
+
+Le proxy `server/llm/` applique désormais ces règles :
+
+| Garde-fou | Effet |
+| --- | --- |
+| `LLM_FREE_ONLY=true` (**défaut**) | seuls les fournisseurs déclarés gratuits sont utilisés : `local`, `openrouter` (modèle `:free`), `groq` et `gemini` (palier gratuit). `huggingface`, `kling` et `minimax` sont **écartés** : aucun appel, donc aucun débit. |
+| Jeton HF explicite uniquement | seul `HF_API_TOKEN` est lu ; jamais `HF_TOKEN` ni le cache `huggingface-cli login`. Vide = fournisseur « non configuré », aucune requête. |
+| `HF_FORBIDDEN_ACCOUNTS` / `HF_EXPECTED_ACCOUNT` | si `LLM_FREE_ONLY=false`, le propriétaire du jeton est vérifié (`/api/whoami-v2`) avant le premier appel ; compte interdit, inattendu ou vérification impossible ⇒ refus. |
+| `HF_BILL_TO` | facturer une organisation Team/Enterprise (ex. celle de l'école) au lieu de l'utilisateur. |
+| OpenRouter `:free` imposé | sans suffixe `:free`, OpenRouter est classé payant et écarté. |
+| `LLM_QUOTAS` + `LLM_QUOTA_FILE` | quotas **quotidiens** réels (remise à zéro chaque jour UTC, persistés sur disque) pour rester sous les limites des paliers gratuits. |
+| Console d'admin / `GET /api/llm/providers` | pour chaque fournisseur : `free`, `billing`, `configured`, `eligible`, `reason`. |
+
+> Groq et Gemini restent gratuits **tant que la facturation n'est pas activée**
+> sur le compte qui fournit la clé : utilisez un compte sans moyen de paiement,
+> ou mettez `GROQ_FREE_TIER=false` / `GEMINI_FREE_TIER=false`.
+> Les routes explicites `/kling/*` ne passent pas par le proxy et consomment
+> les crédits Kling (pas de palier gratuit côté API).
+
+Configuration conseillée, **sans budget et sans toucher au compte HF personnel** :
 
 ```env
-# Vidéo open source gratuite via HF Inference Providers
-LLM_PROVIDER_PRIORITY=local,huggingface
-HF_API_BASE_URL=https://router.huggingface.co/v1
-HF_API_TOKEN=<token Hugging Face>
-HF_MODEL=Wan-AI/Wan2.2-I2V-A14B
+LLM_FREE_ONLY=true
+LLM_PROVIDER_PRIORITY=local,openrouter,groq,gemini
 
-# Assistant texte local (aucun coût)
+# LLM local (aucun coût, aucun compte)
 LOCAL_LLM_BASE_URL=http://localhost:11434/v1
 LOCAL_LLM_MODEL=llama3.1
+
+# Clés de paliers gratuits (comptes sans moyen de paiement)
+OPENROUTER_API_KEY=
+OPENROUTER_MODEL=openai/gpt-oss-20b:free
+GROQ_API_KEY=
+GEMINI_API_KEY=
+LLM_QUOTAS=openrouter=45,groq=900,gemini=400
+
+# Hugging Face : laisser vide. Ceinture et bretelles si un jeton est ajouté un jour :
+HF_API_TOKEN=
+HF_FORBIDDEN_ACCOUNTS=<votre-compte-hf-personnel>
 ```
 
-> ⚠️ Les **quotas exacts** des paliers gratuits changent régulièrement : à
-> confirmer sur la page *Pricing* de chaque fournisseur au moment de la mise en
-> service. Les statuts de providers ci-dessus sont ceux relevés le 29/10/2026.
+Les modèles vidéo ouverts (Wan, MiniMax-H3, JoyAI-Video-Edit…) restent
+utilisables gratuitement **sur un GPU local** ou via l'interface web des
+Spaces ; voir `modeles_video_a_video.md`.

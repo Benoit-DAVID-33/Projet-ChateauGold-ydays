@@ -6,7 +6,7 @@ Ces tests sont isoles : ils n'exercent ni le reseau ni le routeur HTTP.
 import asyncio
 import time
 
-from server.caching import SelectiveGZipMiddleware, TTLCache
+from server.core.caching import SelectiveGZipMiddleware, TTLCache
 
 
 def _run_middleware(content_type: str, body: bytes, path: str = "/page"):

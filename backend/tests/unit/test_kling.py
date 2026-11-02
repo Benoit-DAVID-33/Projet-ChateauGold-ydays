@@ -6,7 +6,8 @@ import httpx
 import pytest
 from helpers import FakeClient, FakeResponse
 
-from server import config, kling
+from server import config
+from server.integrations import kling_api as kling
 
 
 @pytest.fixture(autouse=True)

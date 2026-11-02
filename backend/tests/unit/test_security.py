@@ -1,6 +1,6 @@
 """Tests de la facade utilisateurs (hachage, authentification, cache)."""
 
-from server import security
+from server.accounts import users as security
 
 
 def test_create_and_authenticate():

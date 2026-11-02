@@ -1,6 +1,7 @@
 """Tests du parcours d'authentification et du formulaire de contact."""
 
-from server import mailer, security
+from server.accounts import users as security
+from server.integrations import mailer
 
 
 def test_register_then_login(client):
@@ -40,7 +41,7 @@ def test_login_redirects_when_authenticated(auth_client):
 
 
 def test_contact_success(auth_client, monkeypatch):
-    from server.routers import pages
+    from server.api import pages
 
     async def ok(name, email, message):
         return None
@@ -54,7 +55,7 @@ def test_contact_success(auth_client, monkeypatch):
 
 
 def test_contact_mail_failure(auth_client, monkeypatch):
-    from server.routers import pages
+    from server.api import pages
 
     async def boom(name, email, message):
         raise mailer.MailError("smtp down")

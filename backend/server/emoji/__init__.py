@@ -10,10 +10,20 @@ en langage naturel, et plan de calques deterministe.
 - ``layout``  : plan de calques (positions deterministes, sans rendu image).
 """
 
-from .dataset import EmojiDataError, get_dataset, merge_languages, reset_cache
-from .layout import LayerOptions, make_rng, plan_layers, safe_name
-from .prompt import parse_prompt
-from .search import alias_queries, normalize, rank_matches
+from server.emoji.dataset import (
+    EmojiDataError,
+    get_dataset,
+    merge_languages,
+    reset_cache,
+)
+from server.emoji.layout import (
+    LayerOptions,
+    make_rng,
+    plan_layers,
+    safe_name,
+)
+from server.emoji.prompt import parse_prompt
+from server.emoji.search import alias_queries, normalize, rank_matches
 
 __all__ = [
     "EmojiDataError",

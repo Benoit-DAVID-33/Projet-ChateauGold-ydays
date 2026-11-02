@@ -2,7 +2,8 @@
 
 from helpers import FakeClient, FakeResponse
 
-from server import api_client, media_tools
+from server.integrations import processing_api as api_client
+from server.media import ffmpeg
 
 
 def test_upload_image(auth_client, media_folders):
@@ -144,7 +145,7 @@ def test_convert_webm_to_mp4(auth_client, monkeypatch):
         with open(path_out, "wb") as handle:
             handle.write(b"MP4DATA")
 
-    monkeypatch.setattr(media_tools, "ffmpeg_webm_to_mp4", fake_convert)
+    monkeypatch.setattr(ffmpeg, "webm_to_mp4", fake_convert)
     response = auth_client.post(
         "/api/convert-webm-to-mp4",
         files={"file": ("record.webm", b"WEBM", "video/webm")},
@@ -157,7 +158,7 @@ def test_convert_webm_to_mp4_failure(auth_client, monkeypatch):
     def boom(path_in, path_out):
         raise OSError("ffmpeg introuvable")
 
-    monkeypatch.setattr(media_tools, "ffmpeg_webm_to_mp4", boom)
+    monkeypatch.setattr(ffmpeg, "webm_to_mp4", boom)
     response = auth_client.post(
         "/api/convert-webm-to-mp4",
         files={"file": ("record.webm", b"WEBM", "video/webm")},

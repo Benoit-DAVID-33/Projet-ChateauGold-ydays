@@ -6,7 +6,8 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
-from server import config, db, security
+from server import config, db
+from server.accounts import users as security
 from server.db import JsonUserStore, SqlAlchemyUserStore, seed_from_json
 from server.db.engine import Base
 
@@ -80,6 +81,7 @@ def test_init_db_creates_and_seeds(tmp_path, monkeypatch):
     monkeypatch.setattr(config, "USER_STORE", "sqlalchemy")
     db.init_db(target_engine=engine, session_factory=factory)
     assert SqlAlchemyUserStore(factory).get("demo") is not None
+    engine.dispose()  # ferme les connexions SQLite (evite les ResourceWarning)
 
 
 def test_facade_with_sqlalchemy_store(sqlalchemy_store, monkeypatch):

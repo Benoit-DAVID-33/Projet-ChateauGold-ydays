@@ -2,7 +2,8 @@
 
 from helpers import FakeClient, FakeResponse
 
-from server import config, kling
+from server import config
+from server.integrations import kling_api as kling
 
 
 def _fake(monkeypatch, response):
@@ -70,3 +71,41 @@ def test_omni_video_status_downloads(auth_client, kling_keys, monkeypatch, media
     assert response.status_code == 200
     assert response.json()["local_video"] == "kling_task123.mp4"
     assert (video_folder / "kling_task123.mp4").exists()
+
+
+def test_omni_video_converts_natural_prompt(auth_client, kling_keys, monkeypatch):
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://example.test")
+    monkeypatch.setattr(config, "PROMPT_AUTO_ENHANCE", True)
+    fake = _fake(monkeypatch, FakeResponse(200, json_data={"data": {"task_id": "o1"}}))
+    response = auth_client.post(
+        "/kling/omni-video",
+        json={"prompt": "enlève le logo et mets de la neige", "filename": "v.mp4"},
+    )
+    assert response.status_code == 200
+    sent = fake.calls[0][2]["json"]
+    assert sent["prompt"].startswith("Remove the logo from <<<video_1>>>")
+    conversion = response.json()["prompt_conversion"]
+    assert conversion["original"] == "enlève le logo et mets de la neige"
+    assert len(conversion["remaining_steps"]) == 1
+
+
+def test_omni_video_applies_recommended_refer_type(auth_client, kling_keys, monkeypatch):
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://example.test")
+    fake = _fake(monkeypatch, FakeResponse(200, json_data={"data": {"task_id": "o1"}}))
+    auth_client.post(
+        "/kling/omni-video", json={"prompt": "génère le plan suivant", "filename": "v.mp4"}
+    )
+    assert fake.calls[0][2]["json"]["video_list"][0]["refer_type"] == "feature"
+
+
+def test_omni_video_keeps_engineered_or_opted_out_prompt(auth_client, kling_keys, monkeypatch):
+    monkeypatch.setattr(config, "PUBLIC_BASE_URL", "https://example.test")
+    fake = _fake(monkeypatch, FakeResponse(200, json_data={"data": {"task_id": "o1"}}))
+    engineered = "Remove the cat from <<<video_1>>>."
+    auth_client.post("/kling/omni-video", json={"prompt": engineered, "filename": "v.mp4"})
+    auth_client.post(
+        "/kling/omni-video",
+        json={"prompt": "enlève le chat", "filename": "v.mp4", "auto_prompt": False},
+    )
+    assert fake.calls[0][2]["json"]["prompt"] == engineered
+    assert fake.calls[1][2]["json"]["prompt"] == "enlève le chat"

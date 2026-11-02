@@ -6,8 +6,8 @@ acces a la base), jamais au demarrage de l'application.
 
 from sqlalchemy import select
 
-from .contract import UserRecord, UserStore
-from .models import User
+from server.db.contract import UserRecord, UserStore
+from server.db.models import User
 
 
 class SqlAlchemyUserStore(UserStore):

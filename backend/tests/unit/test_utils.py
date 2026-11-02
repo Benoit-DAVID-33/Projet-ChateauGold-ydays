@@ -5,8 +5,8 @@ from types import SimpleNamespace
 
 from starlette.datastructures import FormData
 
-from server import forms, templating
-from server.http import LazyClient
+from server.core import forms, templating
+from server.core.http_clients import LazyClient
 
 
 def test_flash_roundtrip():
