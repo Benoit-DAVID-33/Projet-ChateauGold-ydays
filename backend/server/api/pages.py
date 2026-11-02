@@ -15,8 +15,8 @@ router = APIRouter(tags=["pages"])
 
 
 @router.get("/", name="index")
-async def index(request: Request, _: str = Depends(require_user_page)):
-    """Page d'accueil (landing)."""
+async def index(request: Request):
+    """Page d'accueil publique (vitrine) : visible sans compte, comme /offres."""
     return render(
         request,
         "home.html",

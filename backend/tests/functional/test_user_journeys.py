@@ -70,4 +70,4 @@ def test_journey_logout_blocks_access(client):
     """Apres deconnexion, les pages protegees redirigent vers la connexion."""
     _register_and_login(client)
     client.get("/logout", follow_redirects=False)
-    assert client.get("/", follow_redirects=False).status_code == 303
+    assert client.get("/video", follow_redirects=False).status_code == 303

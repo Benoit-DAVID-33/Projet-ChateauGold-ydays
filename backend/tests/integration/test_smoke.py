@@ -7,8 +7,12 @@ def test_login_page_renders(client):
     assert "/static/css/style.css" in response.text
 
 
-def test_root_redirects_to_login(client):
-    response = client.get("/", follow_redirects=False)
+def test_root_is_a_public_landing(client):
+    assert client.get("/", follow_redirects=False).status_code == 200
+
+
+def test_work_pages_redirect_to_login(client):
+    response = client.get("/video", follow_redirects=False)
     assert response.status_code == 303
     assert response.headers["location"].startswith("/login")
 
@@ -45,7 +49,7 @@ def test_authenticated_pages(auth_client):
 
 def test_logout_clears_session(auth_client):
     auth_client.get("/logout", follow_redirects=False)
-    assert auth_client.get("/", follow_redirects=False).status_code == 303
+    assert auth_client.get("/video", follow_redirects=False).status_code == 303
 
 
 def test_contact_validation(auth_client):
