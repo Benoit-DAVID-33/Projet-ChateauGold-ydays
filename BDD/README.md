@@ -5,7 +5,7 @@ Base SQLite de l'application Flask ChateauGold-ydays, construite à partir du di
 ## Fichiers
 
 | Fichier | Rôle |
-|---|---|---|
+|---|---|
 | `models.py` | Modèles Flask-SQLAlchemy : crée les tables et contient les méthodes du diagramme |
 | `schema.sql` | Le même schéma écrit en SQL (contraintes, index, vue `v_historique`) | 
 | `README.md` | Ce fichier: Documentation |
