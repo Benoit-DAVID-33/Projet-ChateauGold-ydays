@@ -8,7 +8,6 @@
 # Fichiers d'images volumineux
 *.jpg
 *.jpeg
-*.png
 *.gif
 *.bmp
 *.webp
