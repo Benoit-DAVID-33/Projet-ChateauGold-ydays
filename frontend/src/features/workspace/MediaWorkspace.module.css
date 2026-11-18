@@ -1,0 +1,44 @@
+.workspace {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* Onglets Atelier / Workflow */
+.tabs {
+  display: flex;
+  gap: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: -1px;
+  padding: 10px 18px;
+  border: 1px solid transparent;
+  border-radius: var(--r-md) var(--r-md) 0 0;
+  background: transparent;
+  color: var(--text-3);
+  font-weight: 700;
+  cursor: pointer;
+}
+.tab svg {
+  width: 18px;
+  height: 18px;
+}
+.tab:hover {
+  color: var(--gold);
+}
+.tabActive {
+  border-color: var(--border);
+  border-bottom-color: var(--bg);
+  background: var(--bg);
+  color: var(--gold);
+}
+
+.workflow {
+  /* L'éditeur de graphe remplit son conteneur : hauteur définie, proche de l'écran. */
+  height: calc(100vh - var(--header-h) - 32px);
+  min-height: 560px;
+}

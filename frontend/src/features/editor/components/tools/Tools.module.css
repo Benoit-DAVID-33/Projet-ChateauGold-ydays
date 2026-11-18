@@ -1,0 +1,270 @@
+/* Panneaux « Outils d'édition » (thème sombre cohérent, cf. spec §5.1). */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.entry {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-size: 15px;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    transform 0.15s var(--ease);
+}
+.entry:hover {
+  background: var(--gold-a08);
+  color: var(--gold);
+  transform: translateX(4px);
+}
+.entry svg {
+  width: 20px;
+  height: 20px;
+  flex: none;
+}
+.chevron {
+  margin-left: auto;
+  opacity: 0.6;
+}
+
+.intro {
+  margin: 0 0 14px;
+  color: var(--text-3);
+  font-size: 14px;
+}
+.help {
+  margin: 16px 0 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.help kbd {
+  padding: 1px 6px;
+  border: 1px solid var(--border-strong);
+  border-radius: 4px;
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.choice {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    transform 0.15s var(--ease);
+}
+.choice:hover {
+  border-color: var(--gold-a40);
+  background: var(--gold-a08);
+  transform: scale(1.03);
+}
+.choiceLabel {
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+.objectIcon {
+  width: 34px;
+  height: 34px;
+  color: var(--preview-color, var(--gold));
+}
+
+/* Variante colonne (ToolsSidebar) : grilles denses façon panneaux SD WebUI. */
+.gridDense {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+}
+.gridDense3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+}
+.choiceDense {
+  gap: 6px;
+  padding: 8px 4px;
+}
+.choiceDense:hover {
+  transform: none;
+}
+.choiceDense .choiceLabel {
+  font-size: 11px;
+  line-height: 1.2;
+}
+.choiceDense .preview {
+  width: 26px;
+  height: 26px;
+}
+.choiceDense .rounded-square {
+  border-radius: 6px;
+}
+.choiceDense .linePreview {
+  width: 30px;
+  height: 30px;
+}
+.choiceDense .objectIcon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Aperçus des formes (couleur courante de la palette). */
+.preview {
+  width: 60px;
+  height: 60px;
+  background: var(--preview-color, var(--gold));
+}
+.rounded-square {
+  border-radius: 12px;
+}
+.circle {
+  border-radius: 50%;
+}
+.triangle {
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+.triangle-inverted {
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.diamond {
+  clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+}
+.hexagon {
+  clip-path: polygon(0 50%, 25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%);
+}
+.linePreview {
+  width: 50px;
+  height: 50px;
+  color: var(--preview-color, var(--gold));
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 18px;
+}
+.label {
+  color: var(--text-2);
+  font-size: 14px;
+  font-weight: 600;
+}
+.input {
+  padding: 10px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text);
+}
+.input:focus {
+  border-color: var(--gold);
+  outline: none;
+}
+.range {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.range input {
+  flex: 1;
+  accent-color: var(--gold);
+}
+.rangeValue {
+  min-width: 44px;
+  color: var(--gold);
+  font-weight: 700;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.palette {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+}
+.compact {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  gap: 6px;
+}
+.swatch {
+  aspect-ratio: 1;
+  min-width: 0;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-sm);
+  background: var(--swatch);
+  cursor: pointer;
+  transition: transform 0.15s var(--ease);
+}
+.swatch:hover {
+  transform: scale(1.08);
+}
+.swatchSelected {
+  border: 2px solid var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-a25);
+}
+.colorPreview {
+  height: 40px;
+  margin-top: 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--swatch);
+}
+.colorPreviewCompact {
+  height: 18px;
+  margin-top: 4px;
+}
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.actionsDense {
+  gap: 6px;
+}
+.active {
+  box-shadow: 0 0 0 2px var(--gold);
+}
+
+/* Densité « colonne » appliquée par ToolsSidebar à ses sous-panneaux. */
+.denseScope .field {
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.denseScope .label {
+  font-size: 12px;
+}
+.denseScope .input {
+  padding: 6px 8px;
+  font-size: 13px;
+}
+.denseScope .help {
+  margin-top: 8px;
+  font-size: 12px;
+}

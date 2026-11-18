@@ -1,0 +1,71 @@
+.page {
+  display: grid;
+  grid-template-columns: minmax(380px, 42%) 1fr;
+  min-height: 100vh;
+}
+.formSide {
+  display: grid;
+  place-items: center;
+  padding: 40px 24px;
+  background: var(--surface-1);
+}
+.formInner {
+  width: min(420px, 100%);
+}
+.logo {
+  display: inline-block;
+  padding: 10px 16px;
+  margin-bottom: 28px;
+  background: var(--bg);
+  border: 2px solid var(--gold);
+  border-radius: 16px;
+  font-weight: 800;
+  letter-spacing: 1px;
+}
+.gold {
+  color: var(--gold);
+}
+.formInner h1 {
+  margin: 0 0 8px;
+  font-size: 2em;
+}
+.subtitle {
+  margin: 0 0 28px;
+  color: var(--text-3);
+}
+.visual {
+  display: grid;
+  place-items: center;
+  padding: 40px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255, 215, 0, 0.15), transparent 50%),
+    radial-gradient(circle at 70% 70%, rgba(108, 92, 231, 0.2), transparent 50%), var(--bg);
+}
+.visualInner {
+  max-width: 460px;
+  text-align: center;
+}
+.visualIcon svg {
+  width: 64px;
+  height: 64px;
+  color: var(--gold);
+}
+.visual h2 {
+  font-size: 2em;
+  background: linear-gradient(90deg, #ffd700, #ff9500);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.visual p {
+  color: var(--text-3);
+  line-height: 1.7;
+}
+@media (max-width: 968px) {
+  .page {
+    grid-template-columns: 1fr;
+  }
+  .visual {
+    display: none;
+  }
+}

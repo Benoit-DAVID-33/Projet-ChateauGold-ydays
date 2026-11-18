@@ -1,0 +1,56 @@
+# GOLD FX — déploiement complet : `docker compose up -d --build`
+# Configuration : copier .env.example en .env et renseigner les secrets.
+name: goldfx
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-goldfx}
+      POSTGRES_USER: ${POSTGRES_USER:-goldfx}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD doit être défini dans .env}
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    networks: [backend]
+
+  api:
+    build: ./backend
+    image: goldfx-api:${GOLDFX_VERSION:-latest}
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      GOLDFX_DATABASE_URL: postgresql://${POSTGRES_USER:-goldfx}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-goldfx}
+      GOLDFX_STORAGE_DIR: /data/media
+    volumes:
+      - media-data:/data
+    depends_on:
+      db:
+        condition: service_healthy
+    networks: [backend, frontend]
+    # Pas de port publié : l'API n'est joignable que via le conteneur « web ».
+
+  web:
+    build: ./frontend
+    image: goldfx-web:${GOLDFX_VERSION:-latest}
+    restart: unless-stopped
+    ports:
+      - "${GOLDFX_HTTP_PORT:-8080}:8080"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks: [frontend]
+
+volumes:
+  db-data:
+  media-data:
+
+networks:
+  backend:
+    internal: true # la base n'a aucun accès réseau sortant
+  frontend:

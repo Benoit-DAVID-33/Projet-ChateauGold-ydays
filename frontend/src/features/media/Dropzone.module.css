@@ -1,0 +1,62 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.zone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 40px 20px;
+  border: 2px dashed var(--gold-a40);
+  border-radius: var(--r-2xl);
+  background: var(--gold-a06);
+  text-align: center;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.zone p {
+  margin: 0;
+  color: var(--text-2);
+}
+.dragging {
+  border-color: var(--gold);
+  background: var(--gold-a15);
+}
+.busy {
+  opacity: 0.85;
+}
+.icon {
+  width: 48px;
+  height: 48px;
+  color: var(--gold);
+}
+.hint {
+  color: var(--text-muted);
+  font-size: 13px;
+}
+.progress {
+  position: relative;
+  width: min(360px, 100%);
+  height: 22px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.progress > div {
+  height: 100%;
+  background: var(--gold-gradient);
+  transition: width 0.2s;
+}
+.progress > span {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
+  mix-blend-mode: difference;
+}

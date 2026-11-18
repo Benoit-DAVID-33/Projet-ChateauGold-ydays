@@ -1,0 +1,143 @@
+/* Bloc « Prompt » inline de l'Atelier (colonne de 300 à 340 px). */
+
+.composer {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.textarea {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  font-size: 14px;
+  line-height: 1.45;
+}
+.textarea:focus-visible {
+  border-color: var(--gold);
+  outline-offset: 0;
+}
+.textarea::placeholder {
+  color: var(--text-faint);
+}
+.textarea[aria-invalid="true"] {
+  border-color: var(--danger);
+}
+
+/* Hauteur ajustée au contenu en JS (bornée), d'où l'absence de poignée. */
+.prompt {
+  min-height: 96px;
+  resize: none;
+  overflow-y: hidden;
+}
+
+.negative {
+  min-height: 56px;
+  resize: vertical;
+  font-size: 13px;
+}
+
+.counter {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.counterOver {
+  color: var(--danger);
+  font-weight: 700;
+}
+
+.annotations {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.checkbox {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  color: var(--text-2);
+  font-size: 13px;
+  cursor: pointer;
+}
+.checkbox input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--gold);
+  cursor: inherit;
+}
+.checkboxDisabled {
+  color: var(--text-faint);
+  cursor: not-allowed;
+}
+
+.summary {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.previewBlock {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+
+.disclosure {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-align: left;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.disclosure:hover {
+  background: var(--gold-a06);
+}
+
+.chevron {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  transition: transform 0.15s var(--ease);
+}
+.chevronOpen {
+  transform: rotate(90deg);
+}
+
+.previewBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 10px 10px;
+}
+
+@media (max-width: 480px) {
+  .textarea {
+    font-size: 16px; /* évite le zoom automatique d'iOS au focus */
+  }
+}

@@ -1,0 +1,95 @@
+[project]
+name = "goldfx"
+version = "2.0.0"
+description = "GOLD FX — API d'édition et de génération de médias (images / vidéos) assistée par IA"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.115,<1.0",
+    "uvicorn[standard]>=0.32",
+    "pydantic>=2.9,<3",
+    "pydantic-settings>=2.6,<3",
+    "email-validator>=2.2",
+    "python-multipart>=0.0.18",
+    "sqlalchemy>=2.0.36,<2.1",
+    "alembic>=1.14",
+    "psycopg[binary]>=3.2",
+    "argon2-cffi>=23.1",
+    "httpx>=0.28",
+    "pyjwt>=2.10",
+]
+
+[project.scripts]
+goldfx = "goldfx.cli:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.3",
+    "pytest-cov>=6.0",
+    "respx>=0.22",
+    "ruff>=0.8",
+    "mypy>=1.13",
+    "werkzeug>=3.1.9",
+]
+
+[build-system]
+requires = ["hatchling>=1.25"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/goldfx"]
+
+# --------------------------------------------------------------------------- #
+# Outillage
+# --------------------------------------------------------------------------- #
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = [
+    "E", "W", "F",   # pycodestyle / pyflakes
+    "I",             # isort
+    "B",             # bugbear
+    "UP",            # pyupgrade
+    "S",             # bandit (sécurité)
+    "SIM",           # simplifications
+    "RUF",
+    "N",             # nommage
+    "PTH",           # pathlib
+]
+ignore = ["B008"]  # Depends() dans les signatures FastAPI : idiomatique
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S107", "S108", "S603", "S607"]
+"migrations/**" = ["N999"]
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+mypy_path = "src"
+packages = ["goldfx"]
+plugins = ["pydantic.mypy"]
+
+[[tool.mypy.overrides]]
+module = ["argon2.*"]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-ra --strict-markers"
+filterwarnings = [
+    "error::DeprecationWarning:goldfx.*",
+    # Avertissement interne à starlette.testclient, sans impact sur l'app.
+    "ignore:Using `httpx` with `starlette.testclient`",
+]
+
+[tool.coverage.run]
+source = ["goldfx"]
+branch = true
+
+[tool.coverage.report]
+show_missing = true
+skip_covered = true
+fail_under = 85

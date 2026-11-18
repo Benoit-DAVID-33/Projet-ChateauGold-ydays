@@ -1,0 +1,62 @@
+.wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 6px 6px 18px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-pill);
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s;
+}
+.bar:focus-within {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-a15);
+}
+.icon {
+  width: 18px;
+  color: var(--text-muted);
+  flex: none;
+}
+.bar input {
+  flex: 1;
+  min-width: 0;
+  background: none;
+  border: none;
+  outline: none;
+  color: var(--text);
+  font-size: 15px;
+}
+.mic {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--gold);
+  cursor: pointer;
+}
+.mic:hover {
+  background: var(--gold-a08);
+}
+.listening {
+  background: rgba(231, 76, 60, 0.18);
+  color: var(--danger);
+  animation: pulse 1.2s ease-in-out infinite;
+}
+.send {
+  border-radius: var(--r-pill);
+}
+@keyframes pulse {
+  50% {
+    box-shadow: 0 0 0 6px rgba(231, 76, 60, 0.15);
+  }
+}

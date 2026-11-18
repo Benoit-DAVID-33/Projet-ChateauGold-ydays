@@ -1,0 +1,6 @@
+* text=auto eol=lf
+*.sh text eol=lf
+uv.lock linguist-generated=true
+frontend/package-lock.json linguist-generated=true
+frontend/src/shared/api/schema.d.ts linguist-generated=true
+backend/openapi.json linguist-generated=true

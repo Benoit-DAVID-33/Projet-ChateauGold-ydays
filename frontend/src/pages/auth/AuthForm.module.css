@@ -1,0 +1,10 @@
+.form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+.switch {
+  margin: 4px 0 0;
+  text-align: center;
+  color: var(--text-3);
+}

@@ -1,0 +1,94 @@
+/* Barre de contrôles de l'éditeur (zoom, annuler/rétablir, actions). */
+.group {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+
+.btn {
+  display: grid;
+  place-items: center;
+  min-width: 35px;
+  height: 35px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--r-sm);
+  background: var(--gold-a15);
+  color: var(--gold);
+  font-size: 18px;
+  font-weight: 700;
+  line-height: 1;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s;
+}
+.btn:hover:not(:disabled) {
+  background: var(--gold-a25);
+  border-color: var(--gold-a40);
+}
+.btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn svg {
+  width: 18px;
+  height: 18px;
+}
+
+.level {
+  min-width: 52px;
+  padding: 0 6px;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 4px 4px 4px 12px;
+  border: 1px solid color-mix(in srgb, var(--violet) 60%, transparent);
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--violet) 18%, transparent);
+  color: var(--text);
+  font-size: 13px;
+}
+.toolLabel {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.toolExit {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  border: none;
+  border-radius: var(--r-pill);
+  background: var(--violet);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+.toolExit:hover {
+  background: var(--violet-hover);
+}
+.toolExit svg {
+  width: 14px;
+  height: 14px;
+}
+.toolIdle {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 13px;
+}

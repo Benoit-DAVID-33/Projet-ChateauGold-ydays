@@ -1,0 +1,93 @@
+/* Colonne d'outils permanente (~300 px), sections repliables façon SD WebUI. */
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+.title {
+  margin: 0;
+  color: var(--gold);
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.section {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+.sectionActive {
+  border-color: var(--gold-a40);
+  box-shadow: inset 3px 0 0 var(--gold);
+}
+
+.summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  color: var(--text-2);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+}
+.summary::-webkit-details-marker {
+  display: none;
+}
+.summary:hover {
+  color: var(--gold);
+}
+.summary:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: -2px;
+  border-radius: var(--r-md);
+}
+.summaryIcon {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  color: var(--gold);
+}
+.summaryTitle {
+  flex: 1;
+  min-width: 0;
+}
+.badge {
+  padding: 1px 8px;
+  border-radius: var(--r-pill);
+  background: var(--gold);
+  color: var(--bg);
+  font-size: 10px;
+  font-weight: 800;
+}
+.chevron {
+  flex: none;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.15s var(--ease);
+}
+.section[open] > .summary .chevron {
+  transform: rotate(180deg);
+}
+
+.body {
+  padding: 2px 12px 12px;
+}

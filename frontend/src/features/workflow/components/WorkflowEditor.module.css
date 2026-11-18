@@ -1,0 +1,185 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 520px;
+  background: var(--bg);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  overflow: hidden;
+}
+
+.feedback {
+  position: relative;
+  padding: 10px 48px 0 14px;
+}
+.details {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+}
+.dismiss {
+  position: absolute;
+  top: 16px;
+  right: 14px;
+  display: inline-flex;
+  padding: 4px;
+  background: none;
+  border: none;
+  border-radius: var(--r-sm);
+  color: var(--text-2);
+  cursor: pointer;
+}
+.dismiss:hover {
+  color: var(--gold);
+}
+.dismiss svg {
+  width: 16px;
+  height: 16px;
+}
+
+.main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
+.canvas {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Thème « dark & gold » de React Flow (variables officielles --xy-*). */
+.canvas :global(.react-flow) {
+  --xy-background-color: var(--bg);
+  --xy-background-pattern-color: var(--border-strong);
+  --xy-edge-stroke: var(--text-faint);
+  --xy-edge-stroke-selected: var(--gold);
+  --xy-edge-stroke-width: 2;
+  --xy-connectionline-stroke: var(--gold);
+  --xy-connectionline-stroke-width: 2;
+  --xy-handle-background-color: var(--text-muted);
+  --xy-handle-border-color: var(--surface-1);
+  --xy-controls-button-background-color: var(--surface-2);
+  --xy-controls-button-background-color-hover: var(--surface-3);
+  --xy-controls-button-color: var(--text-2);
+  --xy-controls-button-color-hover: var(--gold);
+  --xy-controls-button-border-color: var(--border);
+  --xy-controls-box-shadow: var(--shadow-panel);
+  --xy-minimap-background-color: var(--surface-1);
+  --xy-minimap-mask-background-color: color-mix(in srgb, var(--bg) 70%, transparent);
+  --xy-minimap-mask-stroke-color: var(--gold-a40);
+  --xy-minimap-mask-stroke-width: 1;
+  --xy-minimap-node-stroke-color: transparent;
+  --xy-attribution-background-color: transparent;
+  --xy-node-boxshadow-selected: none;
+  font-family: var(--font);
+}
+
+.canvas :global(.react-flow__minimap) {
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.canvas :global(.react-flow__controls) {
+  border-radius: var(--r-md);
+  overflow: hidden;
+}
+
+.canvas :global(.react-flow__handle.connectingto),
+.canvas :global(.react-flow__handle.valid) {
+  box-shadow: 0 0 0 3px var(--gold-a40);
+}
+
+.canvas :global(.react-flow__attribution a) {
+  color: var(--text-faint);
+}
+
+.empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 24px;
+  pointer-events: none;
+  text-align: center;
+  color: var(--text-muted);
+}
+.empty p {
+  margin: 0;
+  max-width: 360px;
+}
+.empty button {
+  pointer-events: auto;
+}
+
+.legend {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 10px;
+  background: color-mix(in srgb, var(--surface-1) 90%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  font-size: 12px;
+  color: var(--text-2);
+}
+.legendTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+.legendList {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.legendItem {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.swatch {
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  border: 2px solid var(--surface-1);
+  box-shadow: 0 0 0 1px var(--border-strong);
+}
+.swatch-image {
+  background: var(--blue);
+}
+.swatch-video {
+  background: var(--gold-strong);
+}
+.swatch-text {
+  background: var(--success-text);
+}
+.swatch-media {
+  background: linear-gradient(135deg, var(--blue) 50%, var(--gold-strong) 50%);
+}
+
+.confirmText {
+  margin: 0;
+  color: var(--text-2);
+}
+
+@media (max-width: 760px) {
+  .main {
+    flex-direction: column;
+  }
+  .canvas {
+    min-height: 420px;
+  }
+}

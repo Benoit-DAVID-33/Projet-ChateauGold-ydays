@@ -1,0 +1,181 @@
+/* Chronologie vidéo : règle, curseur de lecture, une barre par élément. */
+.panel {
+  --label-width: 104px;
+  --col-gap: 8px;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--surface-1);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.title {
+  flex: 1;
+  margin: 0;
+  color: var(--gold);
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.readout {
+  color: var(--text-2);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.empty {
+  margin: 0;
+  padding: 14px 12px;
+  color: var(--text-muted);
+  font-size: 13px;
+}
+
+.body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px 12px 12px;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: var(--label-width) minmax(0, 1fr);
+  align-items: center;
+  gap: var(--col-gap);
+}
+.rowLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.rowName {
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.swatch {
+  flex: none;
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  background: var(--swatch);
+}
+
+/* Règle graduée : clic ou glisser = déplacer la lecture. */
+.ruler {
+  position: relative;
+  height: 28px;
+  border-bottom: 1px solid var(--border-strong);
+  cursor: pointer;
+  touch-action: none;
+  user-select: none;
+}
+.ruler:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.tick {
+  position: absolute;
+  bottom: 0;
+  width: 1px;
+  height: 8px;
+  background: var(--border-strong);
+}
+.tickLabel {
+  position: absolute;
+  bottom: 10px;
+  left: 0;
+  color: var(--text-muted);
+  font-size: 10px;
+  white-space: nowrap;
+  transform: translateX(-50%);
+}
+.tick:first-child .tickLabel {
+  transform: none;
+}
+
+.tracks {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 220px;
+  overflow-y: auto;
+}
+
+.area {
+  position: relative;
+  height: 22px;
+  border-radius: 4px;
+  background: var(--surface-2);
+}
+
+.bar {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  min-width: 18px;
+  border: 1px solid var(--bar-color);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--bar-color) 35%, transparent);
+  cursor: grab;
+  touch-action: none;
+}
+.bar:active {
+  cursor: grabbing;
+}
+.barSelected {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+
+.edge {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  background: color-mix(in srgb, var(--bar-color) 80%, transparent);
+  cursor: ew-resize;
+}
+.edge:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 1px;
+}
+.edgeStart {
+  left: 0;
+  border-radius: 3px 0 0 3px;
+}
+.edgeEnd {
+  right: 0;
+  border-radius: 0 3px 3px 0;
+}
+
+/* Curseur de lecture (ne capte jamais le pointeur). */
+.cursorLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.tracksCursor {
+  left: calc(var(--label-width) + var(--col-gap));
+}
+.cursor {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--orange);
+}

@@ -1,0 +1,53 @@
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 16px;
+  padding: 10px 14px;
+  background: var(--surface-1);
+  border-bottom: 1px solid var(--border);
+}
+
+.identity {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  max-width: 280px;
+  margin-right: auto;
+}
+
+.name {
+  margin: 0;
+  font-size: 16px;
+  color: var(--gold);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.state {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+.state::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--success);
+}
+.dirty {
+  color: var(--gold-strong);
+}
+.dirty::before {
+  background: var(--gold-strong);
+}
+
+.group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}

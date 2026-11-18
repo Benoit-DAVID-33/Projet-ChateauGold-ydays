@@ -1,0 +1,36 @@
+# Secrets / configuration locale
+.env
+.env.*
+!.env.example
+
+# Données d'exécution (base SQLite, médias uploadés)
+data/
+backend/data/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+*.egg-info/
+
+# Node / front
+node_modules/
+frontend/dist/
+frontend/coverage/
+*.tsbuildinfo
+
+# IDE / OS
+.idea/
+.vscode/*
+!.vscode/extensions.json
+.DS_Store
+Thumbs.db
+
+# Tests de bout en bout
+e2e/out/

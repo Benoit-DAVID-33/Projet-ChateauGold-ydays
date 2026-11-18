@@ -1,0 +1,134 @@
+/*
+ * Design tokens GOLD FX — identité « dark & gold » de la version d'origine,
+ * centralisée ici : aucune couleur en dur ailleurs que dans ce fichier.
+ */
+:root {
+  color-scheme: dark;
+
+  /* Or & accents */
+  --gold: #ffd700;
+  --gold-strong: #ff9500;
+  --gold-gradient: linear-gradient(135deg, #ffd700, #ff9500);
+  --gold-a06: rgba(255, 215, 0, 0.06);
+  --gold-a08: rgba(255, 215, 0, 0.08);
+  --gold-a15: rgba(255, 215, 0, 0.15);
+  --gold-a25: rgba(255, 215, 0, 0.25);
+  --gold-a40: rgba(255, 215, 0, 0.4);
+  --violet: #6c5ce7; /* outils */
+  --violet-hover: #5a4fcf;
+  --orange: #ff6b35; /* assistant IA */
+  --orange-hover: #e55a2f;
+  --blue: #4a90e2;
+  --danger: #e74c3c;
+  --danger-hover: #c0392b;
+  --success: #27ae60;
+  --success-text: #2ecc71;
+  --neutral: #95a5a6;
+
+  /* Surfaces */
+  --bg: #0d0d0d;
+  --surface-1: #111111;
+  --surface-2: #1a1a1a;
+  --surface-3: #2a2a2a;
+  --border: #2a2a2a;
+  --border-strong: #3a3a3a;
+
+  /* Texte */
+  --text: #ffffff;
+  --text-2: #cccccc;
+  --text-3: #aaaaaa;
+  --text-muted: #888888;
+  --text-faint: #666666;
+
+  /* Typo */
+  --font: "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Code", "Courier New", monospace;
+
+  /* Rayons */
+  --r-sm: 6px;
+  --r-md: 8px;
+  --r-lg: 12px;
+  --r-xl: 14px;
+  --r-2xl: 20px;
+  --r-pill: 999px;
+
+  /* Ombres */
+  --shadow-gold: 0 6px 24px rgba(255, 215, 0, 0.35);
+  --shadow-panel: 0 0 20px rgba(0, 0, 0, 0.3);
+  --shadow-menu: 0 8px 30px rgba(0, 0, 0, 0.6);
+  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.8);
+
+  /* Mise en page */
+  --content-max: 1400px;
+  --header-h: 64px;
+
+  /* Pile de calques (remplace les z-index « 10001 !important » d'origine) */
+  --z-header: 100;
+  --z-overlay: 200;
+  --z-panel: 210;
+  --z-menu: 300;
+  --z-modal: 400;
+  --z-toast: 500;
+
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+a {
+  color: var(--gold);
+  text-decoration: none;
+}
+a:hover {
+  color: var(--gold-strong);
+}
+
+button,
+input,
+textarea,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

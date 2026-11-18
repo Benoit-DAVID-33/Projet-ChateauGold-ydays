@@ -1,0 +1,61 @@
+.menu {
+  position: fixed;
+  /* Position du clic, ramenée dans la fenêtre sans mesure JS. */
+  left: max(8px, min(var(--menu-x), calc(100vw - 228px)));
+  top: max(8px, min(var(--menu-y), calc(100vh - 170px)));
+  z-index: var(--z-menu);
+  display: flex;
+  flex-direction: column;
+  width: 220px;
+  padding: 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface-1);
+  box-shadow: var(--shadow-menu);
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  border: none;
+  border-radius: var(--r-sm);
+  background: transparent;
+  color: var(--text-2);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+.item:hover,
+.item:focus-visible {
+  background: var(--gold-a08);
+  color: var(--gold);
+  outline: none;
+}
+.item svg {
+  width: 16px;
+  height: 16px;
+  flex: none;
+}
+
+.state {
+  margin-left: auto;
+  padding: 2px 8px;
+  border-radius: var(--r-pill);
+  background: var(--surface-3);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 700;
+}
+.on {
+  background: color-mix(in srgb, var(--success) 20%, transparent);
+  color: var(--success-text);
+}
+
+.danger:hover,
+.danger:focus-visible {
+  background: color-mix(in srgb, var(--danger) 15%, transparent);
+  color: var(--danger);
+}

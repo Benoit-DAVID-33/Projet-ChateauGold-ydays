@@ -1,0 +1,70 @@
+/* Mise en page commune des pages applicatives (Vidéo, Image, Recherche, Bibliothèque). */
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: 24px 20px 40px;
+}
+/* Pages d'outil (Atelier, Workflow) : pleine largeur jusqu'à 1880 px. */
+.pageWide {
+  max-width: 1880px;
+}
+.title {
+  margin: 0;
+  font-size: 1.6em;
+  font-weight: 800;
+  color: var(--gold);
+}
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 24px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--r-xl);
+}
+.card h2 {
+  margin: 0;
+  font-size: 1.15em;
+  color: var(--gold);
+}
+.card p {
+  margin: 0;
+  color: var(--text-2);
+}
+.muted {
+  color: var(--text-muted) !important;
+  font-size: 14px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+@media (max-width: 768px) {
+  .page {
+    padding: 14px 10px 30px;
+  }
+}
+@media (max-width: 480px) {
+  .actions > * {
+    flex: 1 1 100%;
+  }
+}

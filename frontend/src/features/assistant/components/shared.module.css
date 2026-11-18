@@ -1,0 +1,151 @@
+/* Styles partagés par le panneau Assistant IA et le bloc Prompt de l'Atelier. */
+
+.sectionTitle {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.fieldError {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  margin: 0;
+  color: var(--danger);
+  font-size: 13px;
+}
+.fieldError svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+  margin-top: 2px;
+}
+
+.viewSwitch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.viewOption {
+  position: relative;
+  padding: 5px 12px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  color: var(--text-3);
+  font-size: 13px;
+  cursor: pointer;
+  transition:
+    background 0.15s,
+    border-color 0.15s,
+    color 0.15s;
+}
+.viewOption:hover {
+  color: var(--gold);
+}
+.viewOption:has(:focus-visible) {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+.viewOptionActive {
+  border-color: var(--gold-a40);
+  background: var(--gold-a15);
+  color: var(--gold);
+  font-weight: 700;
+}
+
+/* Radio natif masqué visuellement mais toujours accessible au clavier. */
+.viewRadio {
+  position: absolute;
+  inset: 0;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.preview {
+  width: 100%;
+  height: 220px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: var(--r-md);
+  background: var(--surface-2);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  resize: vertical;
+}
+.preview::placeholder {
+  color: var(--text-muted);
+}
+.previewCompact {
+  height: 180px;
+  font-size: 11px;
+}
+
+.hint {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.feedback {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  min-height: 1.4em;
+  margin: 0;
+  font-size: 13px;
+}
+.feedback svg {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+.success {
+  color: var(--success-text);
+}
+.error {
+  color: var(--danger);
+}
+
+.json {
+  display: block;
+  width: 100%;
+  min-height: 320px;
+  height: 50vh;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  background: var(--bg);
+  color: var(--text-2);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  resize: vertical;
+}
+
+@media (max-width: 480px) {
+  .actions > * {
+    flex: 1 1 100%;
+  }
+  .preview {
+    height: 35vh;
+    font-size: 16px; /* évite le zoom automatique d'iOS au focus */
+  }
+}

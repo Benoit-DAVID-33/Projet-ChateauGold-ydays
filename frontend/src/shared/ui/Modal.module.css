@@ -1,0 +1,47 @@
+.dialog {
+  padding: 0;
+  border: 1px solid var(--gold-a25);
+  border-radius: var(--r-xl);
+  background: var(--surface-1);
+  color: var(--text);
+  width: min(640px, 92vw);
+  max-height: 85vh;
+  box-shadow: var(--shadow-modal);
+}
+.dialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+.content {
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+}
+.header h2 {
+  margin: 0;
+  font-size: 18px;
+  color: var(--gold);
+}
+.close {
+  background: none;
+  border: none;
+  color: var(--text-2);
+  cursor: pointer;
+}
+.body {
+  padding: 20px;
+  overflow: auto;
+}
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--border);
+}

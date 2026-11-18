@@ -1,0 +1,38 @@
+# Surcouche de développement :
+#   docker compose -f compose.yaml -f compose.dev.yaml up --build
+# - API en rechargement à chaud (code monté), mode development (docs /api/docs)
+# - Mailpit pour visualiser les emails du formulaire de contact (http://localhost:8025)
+# - Postgres exposé sur localhost:5432 pour les outils SQL
+services:
+  db:
+    ports:
+      - "127.0.0.1:5432:5432"
+    networks: [backend, frontend]
+
+  api:
+    environment:
+      GOLDFX_ENVIRONMENT: development
+      GOLDFX_COOKIE_SECURE: "false"
+      GOLDFX_LOG_JSON: "false"
+      GOLDFX_MAIL_BACKEND: smtp
+      GOLDFX_SMTP_HOST: mailpit
+      GOLDFX_SMTP_PORT: "1025"
+      GOLDFX_SMTP_STARTTLS: "false"
+      GOLDFX_CONTACT_RECIPIENT: contact@goldfx.local
+      # Le code monté prime sur le paquet installé dans l'image.
+      PYTHONPATH: /app/src
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn --factory goldfx.main:create_app --host 0.0.0.0 --port 8000
+             --reload --reload-dir /app/src"
+    volumes:
+      - ./backend/src:/app/src:ro
+      - media-data:/data
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports:
+      - "127.0.0.1:8025:8025"
+    networks: [frontend]
